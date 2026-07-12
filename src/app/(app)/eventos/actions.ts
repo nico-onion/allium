@@ -1,0 +1,111 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  Database,
+  EventoEstado,
+  EventoTipo,
+} from "@/lib/supabase/database.types";
+
+export type EventoFormState = { error?: string };
+
+async function resolveClienteId(
+  supabase: SupabaseClient<Database>,
+  formData: FormData,
+): Promise<{ clienteId: string } | { error: string }> {
+  if (formData.get("modo_cliente") === "nuevo") {
+    const nombre = (formData.get("cliente_nombre") as string)?.trim();
+    if (!nombre) {
+      return { error: "El nombre del cliente nuevo es obligatorio." };
+    }
+
+    const { data, error } = await supabase
+      .from("clientes")
+      .insert({
+        nombre,
+        telefono: (formData.get("cliente_telefono") as string)?.trim() || null,
+        email: (formData.get("cliente_email") as string)?.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      return { error: error?.message ?? "No se pudo crear el cliente." };
+    }
+    return { clienteId: data.id };
+  }
+
+  const clienteId = formData.get("cliente_id") as string;
+  if (!clienteId) return { error: "Seleccioná un cliente." };
+  return { clienteId };
+}
+
+function buildEventoPayload(formData: FormData, clienteId: string) {
+  const precioRaw = formData.get("precio_total") as string;
+  const margenRaw = formData.get("margen_objetivo") as string;
+  const ubicacion = (formData.get("ubicacion") as string)?.trim();
+
+  return {
+    cliente_id: clienteId,
+    nombre: (formData.get("nombre") as string).trim(),
+    tipo: formData.get("tipo") as EventoTipo,
+    fecha: formData.get("fecha") as string,
+    invitados: Number(formData.get("invitados")),
+    estado: formData.get("estado") as EventoEstado,
+    ubicacion: ubicacion || null,
+    precio_total: precioRaw ? Number(precioRaw) : null,
+    margen_objetivo: margenRaw ? Number(margenRaw) : null,
+  };
+}
+
+export async function crearEvento(
+  _prevState: EventoFormState,
+  formData: FormData,
+): Promise<EventoFormState> {
+  const supabase = await createClient();
+
+  const clienteResult = await resolveClienteId(supabase, formData);
+  if ("error" in clienteResult) return clienteResult;
+
+  const payload = buildEventoPayload(formData, clienteResult.clienteId);
+
+  const { data, error } = await supabase
+    .from("eventos")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { error: error?.message ?? "No se pudo crear el evento." };
+  }
+
+  revalidatePath("/eventos");
+  redirect(`/eventos/${data.id}`);
+}
+
+export async function actualizarEvento(
+  eventoId: string,
+  _prevState: EventoFormState,
+  formData: FormData,
+): Promise<EventoFormState> {
+  const supabase = await createClient();
+
+  const clienteResult = await resolveClienteId(supabase, formData);
+  if ("error" in clienteResult) return clienteResult;
+
+  const payload = buildEventoPayload(formData, clienteResult.clienteId);
+
+  const { error } = await supabase
+    .from("eventos")
+    .update(payload)
+    .eq("id", eventoId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/eventos");
+  revalidatePath(`/eventos/${eventoId}`);
+  redirect(`/eventos/${eventoId}`);
+}
