@@ -4,11 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { generarOrdenCompra } from "@/lib/ordenes-compra/generar";
 import type {
   Database,
   EventoEstado,
   EventoTipo,
 } from "@/lib/supabase/database.types";
+
+export type OrdenCompraFormState = { error?: string };
 
 export type EventoFormState = { error?: string };
 
@@ -127,9 +130,31 @@ export async function cambiarEstadoEvento(
 
   if (error) throw new Error(error.message);
 
+  // Al confirmar, se genera la orden de compra automáticamente a partir del
+  // packing list actual. Si todavía no hay menú/insumos calculables, se
+  // omite en silencio: no bloquea el cambio de estado, que es lo que el
+  // usuario pidió explícitamente al tocar este botón.
+  if (nuevoEstado === "confirmado") {
+    await generarOrdenCompra(supabase, eventoId);
+  }
+
   revalidatePath("/eventos");
   revalidatePath("/eventos/archivo");
   revalidatePath(`/eventos/${eventoId}`);
+}
+
+export async function regenerarOrdenCompra(
+  eventoId: string,
+  _prevState: OrdenCompraFormState,
+  _formData: FormData,
+): Promise<OrdenCompraFormState> {
+  const supabase = await createClient();
+
+  const resultado = await generarOrdenCompra(supabase, eventoId);
+  if (resultado.error) return resultado;
+
+  revalidatePath(`/eventos/${eventoId}`);
+  return {};
 }
 
 export async function eliminarEvento(eventoId: string) {

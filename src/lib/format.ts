@@ -22,3 +22,7 @@ export function formatFecha(iso: string): string {
 export function toDatetimeLocalValue(iso: string): string {
   return iso.slice(0, 16);
 }
+
+export function formatCantidad(n: number): string {
+  return Number(n.toFixed(2)).toString();
+}

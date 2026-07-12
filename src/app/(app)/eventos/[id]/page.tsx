@@ -10,6 +10,7 @@ import {
 } from "@/lib/eventos/queries";
 import { getInsumosParaSelector } from "@/lib/insumos/queries";
 import { calcularPackingList } from "@/lib/eventos/packing-list";
+import { getOrdenCompra } from "@/lib/ordenes-compra/queries";
 import {
   ESTADO_ACCION_RAPIDA_CLASSES,
   ESTADO_ACCION_RAPIDA_LABELS,
@@ -23,7 +24,14 @@ import { EliminarEventoForm } from "@/components/eventos/EliminarEventoForm";
 import { CrearMenuForm } from "@/components/eventos/CrearMenuForm";
 import { AgregarAlMenuForm } from "@/components/eventos/AgregarAlMenuForm";
 import { PackingListTable } from "@/components/eventos/PackingListTable";
-import { cambiarEstadoEvento, eliminarEvento } from "../actions";
+import { RegenerarOrdenCompraBoton } from "@/components/eventos/RegenerarOrdenCompraBoton";
+import { EnviarOrdenPorEmailForm } from "@/components/eventos/EnviarOrdenPorEmailForm";
+import {
+  cambiarEstadoEvento,
+  eliminarEvento,
+  regenerarOrdenCompra,
+} from "../actions";
+import { enviarOrdenCompraPorEmail } from "../email-actions";
 import {
   actualizarCantidadMenuItem,
   agregarRecetaAlMenu,
@@ -68,6 +76,7 @@ export default async function EventoDetallePage({
       )
     : [];
   const packingList = calcularPackingList(menuItems, recetaInsumos);
+  const ordenCompra = await getOrdenCompra(supabase, evento.id);
 
   const [recetas, insumos] = await Promise.all([
     getRecetasParaSelector(supabase),
@@ -230,6 +239,45 @@ export default async function EventoDetallePage({
             </div>
           </>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold text-bordo-600">
+            Orden de compra
+          </h2>
+          <p className="text-xs text-zinc-400">
+            Es una foto del packing list al momento de confirmar el evento —
+            no se actualiza sola si el menú cambia después.
+          </p>
+        </div>
+
+        {!ordenCompra ? (
+          <p className="text-sm text-zinc-400">
+            Todavía no se generó una orden de compra. Se genera sola al
+            marcar el evento como confirmado, o podés generarla ahora con el
+            menú actual.
+          </p>
+        ) : (
+          <>
+            <span className="text-xs text-zinc-400">
+              Generada el {formatFecha(ordenCompra.generadaEn)}
+            </span>
+            <PackingListTable items={ordenCompra.items} />
+          </>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <RegenerarOrdenCompraBoton
+            action={regenerarOrdenCompra.bind(null, evento.id)}
+            label={ordenCompra ? "Regenerar orden de compra" : "Generar orden de compra"}
+          />
+          {ordenCompra && (
+            <EnviarOrdenPorEmailForm
+              action={enviarOrdenCompraPorEmail.bind(null, evento.id)}
+            />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

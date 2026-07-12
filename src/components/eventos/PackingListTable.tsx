@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import type { PackingListItem } from "@/lib/eventos/packing-list";
-
-function formatearCantidad(n: number): string {
-  return Number(n.toFixed(2)).toString();
-}
+import { formatCantidad as formatearCantidad } from "@/lib/format";
 
 export function PackingListTable({ items }: { items: PackingListItem[] }) {
   const [copiado, setCopiado] = useState(false);

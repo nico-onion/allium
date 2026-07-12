@@ -464,6 +464,77 @@ export interface Database {
           },
         ];
       };
+      ordenes_compra: {
+        Row: {
+          id: string;
+          evento_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          evento_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          evento_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_compra_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: true;
+            referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      orden_compra_items: {
+        Row: {
+          id: string;
+          orden_compra_id: string;
+          insumo_id: string;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          orden_compra_id: string;
+          insumo_id: string;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          orden_compra_id?: string;
+          insumo_id?: string;
+          cantidad?: number;
+          unidad?: InsumoUnidad;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "orden_compra_items_orden_compra_id_fkey";
+            columns: ["orden_compra_id"];
+            isOneToOne: false;
+            referencedRelation: "ordenes_compra";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orden_compra_items_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
