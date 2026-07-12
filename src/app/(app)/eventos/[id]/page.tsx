@@ -26,6 +26,7 @@ import { AgregarAlMenuForm } from "@/components/eventos/AgregarAlMenuForm";
 import { PackingListTable } from "@/components/eventos/PackingListTable";
 import { RegenerarOrdenCompraBoton } from "@/components/eventos/RegenerarOrdenCompraBoton";
 import { EnviarOrdenPorEmailForm } from "@/components/eventos/EnviarOrdenPorEmailForm";
+import { OrdenCompraComparacionTable } from "@/components/eventos/OrdenCompraComparacionTable";
 import {
   cambiarEstadoEvento,
   eliminarEvento,
@@ -258,6 +259,14 @@ export default async function EventoDetallePage({
             marcar el evento como confirmado, o podés generarla ahora con el
             menú actual.
           </p>
+        ) : ordenCompra.reconciliado ? (
+          <>
+            <span className="text-xs text-zinc-400">
+              Reconciliada el {formatFecha(ordenCompra.reconciliadoEn!)} —
+              pedido vs. usado
+            </span>
+            <OrdenCompraComparacionTable items={ordenCompra.items} />
+          </>
         ) : (
           <>
             <span className="text-xs text-zinc-400">
@@ -286,18 +295,35 @@ export default async function EventoDetallePage({
         </span>
         <div className="flex gap-2">
           {ACCIONES_RAPIDAS.filter((estado) => estado !== evento.estado).map(
-            (estado) => (
-              <form
-                key={estado}
-                action={cambiarEstadoEvento.bind(null, evento.id, estado)}
-                className="flex-1"
-              >
-                <EstadoRapidoBoton
-                  label={ESTADO_ACCION_RAPIDA_LABELS[estado]!}
-                  className={ESTADO_ACCION_RAPIDA_CLASSES[estado]!}
-                />
-              </form>
-            ),
+            (estado) => {
+              // Si hay una orden de compra pendiente de reconciliar, cerrar
+              // el evento pasa primero por la pantalla de reconciliación de
+              // stock en vez de cambiar el estado directo.
+              if (estado === "realizado" && ordenCompra && !ordenCompra.reconciliado) {
+                return (
+                  <Link
+                    key={estado}
+                    href={`/eventos/${evento.id}/cerrar`}
+                    className={`flex-1 rounded-lg border py-2 text-center text-sm font-medium ${ESTADO_ACCION_RAPIDA_CLASSES.realizado}`}
+                  >
+                    {ESTADO_ACCION_RAPIDA_LABELS.realizado}
+                  </Link>
+                );
+              }
+
+              return (
+                <form
+                  key={estado}
+                  action={cambiarEstadoEvento.bind(null, evento.id, estado)}
+                  className="flex-1"
+                >
+                  <EstadoRapidoBoton
+                    label={ESTADO_ACCION_RAPIDA_LABELS[estado]!}
+                    className={ESTADO_ACCION_RAPIDA_CLASSES[estado]!}
+                  />
+                </form>
+              );
+            },
           )}
         </div>
       </div>

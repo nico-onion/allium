@@ -1,4 +1,7 @@
-import type { InsumoUnidad } from "@/lib/supabase/database.types";
+import type {
+  InsumoUnidad,
+  TipoMovimientoStock,
+} from "@/lib/supabase/database.types";
 
 export const UNIDAD_LABELS: Record<InsumoUnidad, string> = {
   kg: "Kilogramo (kg)",
@@ -22,3 +25,15 @@ export const UNIDAD_OPTIONS = Object.entries(UNIDAD_LABELS) as [
   InsumoUnidad,
   string,
 ][];
+
+export const TIPO_MOVIMIENTO_LABELS: Record<TipoMovimientoStock, string> = {
+  compra: "Compra",
+  uso_evento: "Uso en evento",
+  ajuste: "Ajuste",
+  merma: "Merma",
+};
+
+// uso_evento no es seleccionable a mano: lo genera el sistema al reconciliar
+// el cierre de un evento.
+export const TIPOS_MOVIMIENTO_MANUAL = ["compra", "ajuste", "merma"] as const;
+

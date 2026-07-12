@@ -1,11 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/database.types";
-import type { PackingListItem } from "@/lib/eventos/packing-list";
+import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
+
+export type OrdenCompraItem = {
+  id: string;
+  insumoId: string;
+  insumoNombre: string;
+  cantidad: number;
+  cantidadUsada: number | null;
+  unidad: InsumoUnidad;
+  insumoUnidad: InsumoUnidad;
+  insumoStockActual: number;
+};
 
 export type OrdenCompra = {
   id: string;
   generadaEn: string;
-  items: PackingListItem[];
+  reconciliado: boolean;
+  reconciliadoEn: string | null;
+  items: OrdenCompraItem[];
 };
 
 export async function getOrdenCompra(
@@ -14,7 +26,7 @@ export async function getOrdenCompra(
 ): Promise<OrdenCompra | null> {
   const { data: orden, error } = await supabase
     .from("ordenes_compra")
-    .select("id, updated_at")
+    .select("id, updated_at, reconciliado, reconciliado_en")
     .eq("evento_id", eventoId)
     .maybeSingle();
 
@@ -23,7 +35,9 @@ export async function getOrdenCompra(
 
   const { data: items, error: itemsError } = await supabase
     .from("orden_compra_items")
-    .select("insumo_id, cantidad, unidad, insumos(nombre)")
+    .select(
+      "id, insumo_id, cantidad, cantidad_usada, unidad, insumos(nombre, unidad, stock_actual)",
+    )
     .eq("orden_compra_id", orden.id);
 
   if (itemsError) throw new Error(itemsError.message);
@@ -31,11 +45,17 @@ export async function getOrdenCompra(
   return {
     id: orden.id,
     generadaEn: orden.updated_at,
+    reconciliado: orden.reconciliado,
+    reconciliadoEn: orden.reconciliado_en,
     items: items.map((item) => ({
+      id: item.id,
       insumoId: item.insumo_id,
       insumoNombre: item.insumos?.nombre ?? "Insumo",
-      unidad: item.unidad,
       cantidad: item.cantidad,
+      cantidadUsada: item.cantidad_usada,
+      unidad: item.unidad,
+      insumoUnidad: item.insumos?.unidad ?? item.unidad,
+      insumoStockActual: item.insumos?.stock_actual ?? 0,
     })),
   };
 }

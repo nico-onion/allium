@@ -36,6 +36,8 @@ export type MovimientoTipo = "ingreso" | "egreso";
 
 export type MovimientoOrigen = "BILL" | "manual";
 
+export type TipoMovimientoStock = "compra" | "uso_evento" | "ajuste" | "merma";
+
 export interface Database {
   public: {
     Tables: {
@@ -468,18 +470,24 @@ export interface Database {
         Row: {
           id: string;
           evento_id: string;
+          reconciliado: boolean;
+          reconciliado_en: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           evento_id: string;
+          reconciliado?: boolean;
+          reconciliado_en?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           evento_id?: string;
+          reconciliado?: boolean;
+          reconciliado_en?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -499,6 +507,7 @@ export interface Database {
           orden_compra_id: string;
           insumo_id: string;
           cantidad: number;
+          cantidad_usada: number | null;
           unidad: InsumoUnidad;
           created_at: string;
         };
@@ -507,6 +516,7 @@ export interface Database {
           orden_compra_id: string;
           insumo_id: string;
           cantidad: number;
+          cantidad_usada?: number | null;
           unidad: InsumoUnidad;
           created_at?: string;
         };
@@ -515,6 +525,7 @@ export interface Database {
           orden_compra_id?: string;
           insumo_id?: string;
           cantidad?: number;
+          cantidad_usada?: number | null;
           unidad?: InsumoUnidad;
           created_at?: string;
         };
@@ -531,6 +542,54 @@ export interface Database {
             columns: ["insumo_id"];
             isOneToOne: false;
             referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      movimientos_stock: {
+        Row: {
+          id: string;
+          insumo_id: string;
+          tipo: TipoMovimientoStock;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          evento_id: string | null;
+          nota: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          insumo_id: string;
+          tipo: TipoMovimientoStock;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          evento_id?: string | null;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          insumo_id?: string;
+          tipo?: TipoMovimientoStock;
+          cantidad?: number;
+          unidad?: InsumoUnidad;
+          evento_id?: string | null;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_stock_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimientos_stock_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
             referencedColumns: ["id"];
           },
         ];

@@ -37,9 +37,15 @@ export async function generarOrdenCompra(
     };
   }
 
+  // Regenerar invalida cualquier reconciliación previa: los items nuevos no
+  // tienen cantidad_usada todavía, así que no puede seguir marcada como
+  // reconciliada hasta que se vuelva a cerrar el evento.
   const { data: orden, error: ordenError } = await supabase
     .from("ordenes_compra")
-    .upsert({ evento_id: eventoId }, { onConflict: "evento_id" })
+    .upsert(
+      { evento_id: eventoId, reconciliado: false, reconciliado_en: null },
+      { onConflict: "evento_id" },
+    )
     .select("id")
     .single();
 
