@@ -26,7 +26,7 @@ export async function login(
     return { error: "Email o contraseña incorrectos." };
   }
 
-  redirect("/eventos");
+  redirect("/");
 }
 
 export async function logout() {

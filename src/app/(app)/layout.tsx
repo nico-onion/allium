@@ -10,12 +10,18 @@ export default function AppLayout({
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-bordo-100 bg-white px-4 py-3">
         <Link
-          href="/eventos"
+          href="/"
           className="font-display text-lg font-semibold text-bordo-600"
         >
           ERP Allium
         </Link>
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+          <Link
+            href="/eventos"
+            className="text-sm text-zinc-500 underline-offset-2 hover:underline"
+          >
+            Eventos
+          </Link>
           <Link
             href="/recetas"
             className="text-sm text-zinc-500 underline-offset-2 hover:underline"
