@@ -20,8 +20,10 @@ export type EventoFormValues = {
   invitados: number;
   estado: EventoEstado;
   ubicacion: string | null;
+  precio_por_persona: number | null;
   precio_total: number | null;
   margen_objetivo: number | null;
+  link_cotizacion: string | null;
 };
 
 const inputClasses =
@@ -59,6 +61,25 @@ export function EventoForm({
   const [modoCliente, setModoCliente] = useState<"existente" | "nuevo">(
     defaultValues?.cliente_id || clientes.length > 0 ? "existente" : "nuevo",
   );
+
+  const [invitados, setInvitados] = useState(
+    defaultValues?.invitados?.toString() ?? "",
+  );
+  const [precioPorPersona, setPrecioPorPersona] = useState(
+    defaultValues?.precio_por_persona?.toString() ?? "",
+  );
+  const [precioTotal, setPrecioTotal] = useState(
+    defaultValues?.precio_total?.toString() ?? "",
+  );
+  const [precioTotalManual, setPrecioTotalManual] = useState(false);
+
+  function recalcularPrecioTotal(nuevosInvitados: string, nuevoPrecioPorPersona: string) {
+    const inv = Number(nuevosInvitados);
+    const ppp = Number(nuevoPrecioPorPersona);
+    if (inv > 0 && ppp > 0) {
+      setPrecioTotal(String(inv * ppp));
+    }
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-5 px-4 py-4">
@@ -208,7 +229,13 @@ export function EventoForm({
             name="invitados"
             type="number"
             min={0}
-            defaultValue={defaultValues?.invitados}
+            value={invitados}
+            onChange={(e) => {
+              setInvitados(e.target.value);
+              if (!precioTotalManual) {
+                recalcularPrecioTotal(e.target.value, precioPorPersona);
+              }
+            }}
             required
             className={inputClasses}
           />
@@ -229,6 +256,27 @@ export function EventoForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
+          <label htmlFor="precio_por_persona" className={labelClasses}>
+            Precio por persona (Gs.)
+          </label>
+          <input
+            id="precio_por_persona"
+            name="precio_por_persona"
+            type="number"
+            min={0}
+            step="1"
+            value={precioPorPersona}
+            onChange={(e) => {
+              setPrecioPorPersona(e.target.value);
+              if (!precioTotalManual) {
+                recalcularPrecioTotal(invitados, e.target.value);
+              }
+            }}
+            className={inputClasses}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
           <label htmlFor="precio_total" className={labelClasses}>
             Precio total (Gs.)
           </label>
@@ -238,25 +286,48 @@ export function EventoForm({
             type="number"
             min={0}
             step="1"
-            defaultValue={defaultValues?.precio_total ?? ""}
+            value={precioTotal}
+            onChange={(e) => {
+              setPrecioTotal(e.target.value);
+              setPrecioTotalManual(true);
+            }}
             className={inputClasses}
           />
+          <span className="text-xs text-zinc-400">
+            {precioTotalManual
+              ? "Editado manualmente."
+              : "Se calcula solo: invitados × precio por persona."}
+          </span>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="margen_objetivo" className={labelClasses}>
-            Margen objetivo (%)
-          </label>
-          <input
-            id="margen_objetivo"
-            name="margen_objetivo"
-            type="number"
-            min={0}
-            step="0.1"
-            defaultValue={defaultValues?.margen_objetivo ?? ""}
-            className={inputClasses}
-          />
-        </div>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="margen_objetivo" className={labelClasses}>
+          Margen objetivo (%)
+        </label>
+        <input
+          id="margen_objetivo"
+          name="margen_objetivo"
+          type="number"
+          min={0}
+          step="0.1"
+          defaultValue={defaultValues?.margen_objetivo ?? ""}
+          className={inputClasses}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="link_cotizacion" className={labelClasses}>
+          Link de la cotización
+        </label>
+        <input
+          id="link_cotizacion"
+          name="link_cotizacion"
+          type="url"
+          placeholder="https://drive.google.com/..."
+          defaultValue={defaultValues?.link_cotizacion ?? ""}
+          className={inputClasses}
+        />
       </div>
 
       {state.error && (

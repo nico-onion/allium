@@ -4,17 +4,14 @@ import { getEventos } from "@/lib/eventos/queries";
 import {
   ESTADO_BADGE_CLASSES,
   ESTADO_LABELS,
-  ESTADO_OPTIONS,
+  ESTADO_OPTIONS_ACTIVOS,
+  ESTADOS_ACTIVOS,
   TIPO_LABELS,
+  isEventoEstado,
 } from "@/lib/eventos/constants";
 import { formatFecha, formatGuaranies } from "@/lib/format";
+import { FileIcon } from "@/components/icons/FileIcon";
 import type { EventoEstado } from "@/lib/supabase/database.types";
-
-const ESTADO_VALUES = ESTADO_OPTIONS.map(([value]) => value);
-
-function isEventoEstado(value: string): value is EventoEstado {
-  return (ESTADO_VALUES as string[]).includes(value);
-}
 
 export default async function EventosPage({
   searchParams,
@@ -22,11 +19,19 @@ export default async function EventosPage({
   searchParams: Promise<{ estado?: string }>;
 }) {
   const { estado: estadoParam } = await searchParams;
-  const estado =
-    estadoParam && isEventoEstado(estadoParam) ? estadoParam : undefined;
+  const estado: EventoEstado | undefined =
+    estadoParam &&
+    isEventoEstado(estadoParam) &&
+    ESTADOS_ACTIVOS.includes(estadoParam)
+      ? estadoParam
+      : undefined;
 
   const supabase = await createClient();
-  const eventos = await getEventos(supabase, estado);
+  const eventos = await getEventos(supabase, {
+    estados: ESTADOS_ACTIVOS,
+    estado,
+    ascending: true,
+  });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -53,7 +58,7 @@ export default async function EventosPage({
         >
           Todos
         </Link>
-        {ESTADO_OPTIONS.map(([value, label]) => (
+        {ESTADO_OPTIONS_ACTIVOS.map(([value, label]) => (
           <Link
             key={value}
             href={`/eventos?estado=${value}`}
@@ -85,19 +90,31 @@ export default async function EventosPage({
               <span className="font-medium text-zinc-900">
                 {evento.clientes?.nombre ?? "Sin cliente"}
               </span>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_BADGE_CLASSES[evento.estado]}`}
-              >
-                {ESTADO_LABELS[evento.estado]}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <FileIcon
+                  className={`h-4 w-4 ${
+                    evento.link_cotizacion ? "text-fucsia-600" : "text-zinc-200"
+                  }`}
+                />
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_BADGE_CLASSES[evento.estado]}`}
+                >
+                  {ESTADO_LABELS[evento.estado]}
+                </span>
+              </div>
             </div>
             <span className="text-sm text-zinc-500">
               {TIPO_LABELS[evento.tipo]} · {evento.invitados} invitados
             </span>
             <div className="mt-1 flex items-center justify-between text-sm">
               <span className="text-zinc-500">{formatFecha(evento.fecha)}</span>
-              <span className="font-medium text-bordo-600">
-                {formatGuaranies(evento.precio_total)}
+              <span className="text-right">
+                <span className="block text-xs text-zinc-400">
+                  {formatGuaranies(evento.precio_por_persona)} / persona
+                </span>
+                <span className="font-medium text-bordo-600">
+                  {formatGuaranies(evento.precio_total)}
+                </span>
               </span>
             </div>
           </Link>

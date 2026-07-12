@@ -44,9 +44,11 @@ async function resolveClienteId(
 }
 
 function buildEventoPayload(formData: FormData, clienteId: string) {
+  const precioPorPersonaRaw = formData.get("precio_por_persona") as string;
   const precioRaw = formData.get("precio_total") as string;
   const margenRaw = formData.get("margen_objetivo") as string;
   const ubicacion = (formData.get("ubicacion") as string)?.trim();
+  const linkCotizacion = (formData.get("link_cotizacion") as string)?.trim();
 
   return {
     cliente_id: clienteId,
@@ -56,8 +58,10 @@ function buildEventoPayload(formData: FormData, clienteId: string) {
     invitados: Number(formData.get("invitados")),
     estado: formData.get("estado") as EventoEstado,
     ubicacion: ubicacion || null,
+    precio_por_persona: precioPorPersonaRaw ? Number(precioPorPersonaRaw) : null,
     precio_total: precioRaw ? Number(precioRaw) : null,
     margen_objetivo: margenRaw ? Number(margenRaw) : null,
+    link_cotizacion: linkCotizacion || null,
   };
 }
 
@@ -108,4 +112,33 @@ export async function actualizarEvento(
   revalidatePath("/eventos");
   revalidatePath(`/eventos/${eventoId}`);
   redirect(`/eventos/${eventoId}`);
+}
+
+export async function cambiarEstadoEvento(
+  eventoId: string,
+  nuevoEstado: EventoEstado,
+) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("eventos")
+    .update({ estado: nuevoEstado })
+    .eq("id", eventoId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/eventos");
+  revalidatePath("/eventos/archivo");
+  revalidatePath(`/eventos/${eventoId}`);
+}
+
+export async function eliminarEvento(eventoId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("eventos").delete().eq("id", eventoId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/eventos");
+  revalidatePath("/eventos/archivo");
+  redirect("/eventos");
 }

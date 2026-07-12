@@ -3,18 +3,22 @@ import type { Database, EventoEstado } from "@/lib/supabase/database.types";
 
 export async function getEventos(
   supabase: SupabaseClient<Database>,
-  estado?: EventoEstado,
+  options: {
+    estados: readonly EventoEstado[];
+    estado?: EventoEstado;
+    ascending?: boolean;
+  },
 ) {
+  const { estados, estado, ascending = true } = options;
+
   let query = supabase
     .from("eventos")
     .select(
-      "id, nombre, tipo, fecha, invitados, estado, precio_total, clientes(nombre)",
+      "id, nombre, tipo, fecha, invitados, estado, precio_por_persona, precio_total, link_cotizacion, clientes(nombre)",
     )
-    .order("fecha", { ascending: true });
+    .order("fecha", { ascending });
 
-  if (estado) {
-    query = query.eq("estado", estado);
-  }
+  query = estado ? query.eq("estado", estado) : query.in("estado", estados as EventoEstado[]);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -25,7 +29,7 @@ export async function getEvento(supabase: SupabaseClient<Database>, id: string) 
   const { data, error } = await supabase
     .from("eventos")
     .select(
-      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_total, margen_objetivo, cliente_id, clientes(id, nombre)",
+      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_por_persona, precio_total, margen_objetivo, link_cotizacion, cliente_id, clientes(id, nombre)",
     )
     .eq("id", id)
     .maybeSingle();

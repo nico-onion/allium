@@ -24,8 +24,9 @@ export type EventoEstado =
   | "cotizado"
   | "confirmado"
   | "en_curso"
-  | "cerrado"
-  | "cancelado";
+  | "realizado"
+  | "cancelado"
+  | "postergado";
 
 export type PersonalRol = "cocina" | "mozo" | "logistica";
 
@@ -76,8 +77,10 @@ export interface Database {
           invitados: number;
           estado: EventoEstado;
           ubicacion: string | null;
+          precio_por_persona: number | null;
           precio_total: number | null;
           margen_objetivo: number | null;
+          link_cotizacion: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -90,8 +93,10 @@ export interface Database {
           invitados: number;
           estado?: EventoEstado;
           ubicacion?: string | null;
+          precio_por_persona?: number | null;
           precio_total?: number | null;
           margen_objetivo?: number | null;
+          link_cotizacion?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -104,8 +109,10 @@ export interface Database {
           invitados?: number;
           estado?: EventoEstado;
           ubicacion?: string | null;
+          precio_por_persona?: number | null;
           precio_total?: number | null;
           margen_objetivo?: number | null;
+          link_cotizacion?: string | null;
           created_at?: string;
           updated_at?: string;
         };

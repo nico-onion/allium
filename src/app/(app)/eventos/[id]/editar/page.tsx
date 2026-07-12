@@ -35,8 +35,10 @@ export default async function EditarEventoPage({
           invitados: evento.invitados,
           estado: evento.estado,
           ubicacion: evento.ubicacion,
+          precio_por_persona: evento.precio_por_persona,
           precio_total: evento.precio_total,
           margen_objetivo: evento.margen_objetivo,
+          link_cotizacion: evento.link_cotizacion,
         }}
         action={actualizarEsteEvento}
         submitLabel="Guardar cambios"

@@ -3,11 +3,21 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEvento } from "@/lib/eventos/queries";
 import {
+  ESTADO_ACCION_RAPIDA_CLASSES,
+  ESTADO_ACCION_RAPIDA_LABELS,
   ESTADO_BADGE_CLASSES,
   ESTADO_LABELS,
   TIPO_LABELS,
 } from "@/lib/eventos/constants";
 import { formatFecha, formatGuaranies } from "@/lib/format";
+import { EstadoRapidoBoton } from "@/components/eventos/EstadoRapidoBoton";
+import { EliminarEventoForm } from "@/components/eventos/EliminarEventoForm";
+import { cambiarEstadoEvento, eliminarEvento } from "../actions";
+import type { EventoEstado } from "@/lib/supabase/database.types";
+
+const ACCIONES_RAPIDAS = Object.keys(
+  ESTADO_ACCION_RAPIDA_LABELS,
+) as EventoEstado[];
 
 function Campo({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -54,11 +64,32 @@ export default async function EventoDetallePage({
         <Campo label="Fecha" value={formatFecha(evento.fecha)} />
         <Campo label="Invitados" value={evento.invitados} />
         <Campo label="Ubicación" value={evento.ubicacion ?? "-"} />
+        <Campo
+          label="Precio por persona"
+          value={formatGuaranies(evento.precio_por_persona)}
+        />
         <Campo label="Precio total" value={formatGuaranies(evento.precio_total)} />
         <Campo
           label="Margen objetivo"
           value={
             evento.margen_objetivo !== null ? `${evento.margen_objetivo}%` : "-"
+          }
+        />
+        <Campo
+          label="Cotización"
+          value={
+            evento.link_cotizacion ? (
+              <a
+                href={evento.link_cotizacion}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fucsia-600 underline-offset-2 hover:underline"
+              >
+                Ver cotización
+              </a>
+            ) : (
+              "-"
+            )
           }
         />
       </div>
@@ -70,12 +101,29 @@ export default async function EventoDetallePage({
         Editar evento
       </Link>
 
-      <Link
-        href="/eventos"
-        className="text-center text-sm text-zinc-500 underline-offset-2 hover:underline"
-      >
-        ← Volver a Eventos
-      </Link>
+      <div className="flex flex-col gap-2">
+        <span className="text-xs uppercase tracking-wide text-zinc-400">
+          Cambiar estado
+        </span>
+        <div className="flex gap-2">
+          {ACCIONES_RAPIDAS.filter((estado) => estado !== evento.estado).map(
+            (estado) => (
+              <form
+                key={estado}
+                action={cambiarEstadoEvento.bind(null, evento.id, estado)}
+                className="flex-1"
+              >
+                <EstadoRapidoBoton
+                  label={ESTADO_ACCION_RAPIDA_LABELS[estado]!}
+                  className={ESTADO_ACCION_RAPIDA_CLASSES[estado]!}
+                />
+              </form>
+            ),
+          )}
+        </div>
+      </div>
+
+      <EliminarEventoForm action={eliminarEvento.bind(null, evento.id)} />
     </div>
   );
 }
