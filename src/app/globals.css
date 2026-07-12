@@ -2,25 +2,62 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1015;
+
+  /* Marca Allium: fucsia + bordó */
+  --color-fucsia-50: #fdf2f8;
+  --color-fucsia-100: #fce7f3;
+  --color-fucsia-200: #fbcfe8;
+  --color-fucsia-300: #f9a8d4;
+  --color-fucsia-400: #f472b6;
+  --color-fucsia-500: #ec4899;
+  --color-fucsia-600: #d6338a;
+  --color-fucsia-700: #b3236b;
+
+  --color-bordo-50: #fbf1f2;
+  --color-bordo-100: #f4dde0;
+  --color-bordo-200: #e6b3ba;
+  --color-bordo-300: #cf7d89;
+  --color-bordo-400: #a84a5a;
+  --color-bordo-500: #7a2334;
+  --color-bordo-600: #5e1a28;
+  --color-bordo-700: #43121c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-fucsia-50: var(--color-fucsia-50);
+  --color-fucsia-100: var(--color-fucsia-100);
+  --color-fucsia-200: var(--color-fucsia-200);
+  --color-fucsia-300: var(--color-fucsia-300);
+  --color-fucsia-400: var(--color-fucsia-400);
+  --color-fucsia-500: var(--color-fucsia-500);
+  --color-fucsia-600: var(--color-fucsia-600);
+  --color-fucsia-700: var(--color-fucsia-700);
+
+  --color-bordo-50: var(--color-bordo-50);
+  --color-bordo-100: var(--color-bordo-100);
+  --color-bordo-200: var(--color-bordo-200);
+  --color-bordo-300: var(--color-bordo-300);
+  --color-bordo-400: var(--color-bordo-400);
+  --color-bordo-500: var(--color-bordo-500);
+  --color-bordo-600: var(--color-bordo-600);
+  --color-bordo-700: var(--color-bordo-700);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #170f13;
+    --foreground: #f3e9ec;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
