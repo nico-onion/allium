@@ -1,6 +1,9 @@
-import type { EventoEstado, EventoTipo } from "@/lib/supabase/database.types";
+import type { EventoEstado } from "@/lib/supabase/database.types";
 
-export const TIPO_LABELS: Record<EventoTipo, string> = {
+// tipo es texto libre (podés escribir uno nuevo desde el form), así que esto
+// ya no es un Record exhaustivo — solo etiquetas "lindas" para los tipos
+// originales; cualquier otro valor se muestra tal cual se cargó.
+export const TIPO_LABELS: Record<string, string> = {
   cena_pasos: "Cena de pasos",
   asado: "Asado",
   finger_food: "Finger food",
@@ -10,10 +13,13 @@ export const TIPO_LABELS: Record<EventoTipo, string> = {
   box: "Box",
 };
 
-export const TIPO_OPTIONS = Object.entries(TIPO_LABELS) as [
-  EventoTipo,
-  string,
-][];
+export function tipoLabel(tipo: string): string {
+  return TIPO_LABELS[tipo] ?? tipo;
+}
+
+// Tipos base conocidos del negocio: siempre seleccionables aunque todavía no
+// haya ningún evento cargado con ese tipo.
+export const TIPOS_BASE = Object.keys(TIPO_LABELS);
 
 export const ESTADO_LABELS: Record<EventoEstado, string> = {
   cotizado: "Cotizado",

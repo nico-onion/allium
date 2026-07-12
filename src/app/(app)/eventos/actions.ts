@@ -5,11 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generarOrdenCompra } from "@/lib/ordenes-compra/generar";
-import type {
-  Database,
-  EventoEstado,
-  EventoTipo,
-} from "@/lib/supabase/database.types";
+import type { Database, EventoEstado } from "@/lib/supabase/database.types";
 
 export type OrdenCompraFormState = { error?: string };
 
@@ -31,6 +27,7 @@ async function resolveClienteId(
         nombre,
         telefono: (formData.get("cliente_telefono") as string)?.trim() || null,
         email: (formData.get("cliente_email") as string)?.trim() || null,
+        ruc_ci: (formData.get("cliente_ruc_ci") as string)?.trim() || null,
       })
       .select("id")
       .single();
@@ -46,7 +43,18 @@ async function resolveClienteId(
   return { clienteId };
 }
 
-function buildEventoPayload(formData: FormData, clienteId: string) {
+function resolveTipo(formData: FormData): { tipo: string } | { error: string } {
+  const tipoSeleccionado = formData.get("tipo_seleccionado") as string;
+  const tipo =
+    tipoSeleccionado === "__otro__"
+      ? (formData.get("tipo_nuevo") as string)?.trim()
+      : tipoSeleccionado;
+
+  if (!tipo) return { error: "Seleccioná o escribí un tipo de evento." };
+  return { tipo };
+}
+
+function buildEventoPayload(formData: FormData, clienteId: string, tipo: string) {
   const precioPorPersonaRaw = formData.get("precio_por_persona") as string;
   const precioRaw = formData.get("precio_total") as string;
   const margenRaw = formData.get("margen_objetivo") as string;
@@ -56,7 +64,7 @@ function buildEventoPayload(formData: FormData, clienteId: string) {
   return {
     cliente_id: clienteId,
     nombre: (formData.get("nombre") as string).trim(),
-    tipo: formData.get("tipo") as EventoTipo,
+    tipo,
     fecha: formData.get("fecha") as string,
     invitados: Number(formData.get("invitados")),
     estado: formData.get("estado") as EventoEstado,
@@ -77,7 +85,10 @@ export async function crearEvento(
   const clienteResult = await resolveClienteId(supabase, formData);
   if ("error" in clienteResult) return clienteResult;
 
-  const payload = buildEventoPayload(formData, clienteResult.clienteId);
+  const tipoResult = resolveTipo(formData);
+  if ("error" in tipoResult) return tipoResult;
+
+  const payload = buildEventoPayload(formData, clienteResult.clienteId, tipoResult.tipo);
 
   const { data, error } = await supabase
     .from("eventos")
@@ -103,7 +114,10 @@ export async function actualizarEvento(
   const clienteResult = await resolveClienteId(supabase, formData);
   if ("error" in clienteResult) return clienteResult;
 
-  const payload = buildEventoPayload(formData, clienteResult.clienteId);
+  const tipoResult = resolveTipo(formData);
+  if ("error" in tipoResult) return tipoResult;
+
+  const payload = buildEventoPayload(formData, clienteResult.clienteId, tipoResult.tipo);
 
   const { error } = await supabase
     .from("eventos")

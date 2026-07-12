@@ -16,7 +16,7 @@ import {
   ESTADO_ACCION_RAPIDA_LABELS,
   ESTADO_BADGE_CLASSES,
   ESTADO_LABELS,
-  TIPO_LABELS,
+  tipoLabel,
 } from "@/lib/eventos/constants";
 import { formatFecha, formatGuaranies } from "@/lib/format";
 import { EstadoRapidoBoton } from "@/components/eventos/EstadoRapidoBoton";
@@ -103,7 +103,7 @@ export default async function EventoDetallePage({
       </div>
 
       <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-white p-4">
-        <Campo label="Tipo" value={TIPO_LABELS[evento.tipo]} />
+        <Campo label="Tipo" value={tipoLabel(evento.tipo)} />
         <Campo label="Fecha" value={formatFecha(evento.fecha)} />
         <Campo label="Invitados" value={evento.invitados} />
         <Campo label="Ubicación" value={evento.ubicacion ?? "-"} />

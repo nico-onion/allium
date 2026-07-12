@@ -2,20 +2,19 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { TIPO_OPTIONS, ESTADO_OPTIONS } from "@/lib/eventos/constants";
+import { ESTADO_OPTIONS, tipoLabel } from "@/lib/eventos/constants";
 import { toDatetimeLocalValue } from "@/lib/format";
 import type { EventoFormState } from "@/app/(app)/eventos/actions";
-import type {
-  EventoEstado,
-  EventoTipo,
-} from "@/lib/supabase/database.types";
+import type { EventoEstado } from "@/lib/supabase/database.types";
 
 type ClienteOption = { id: string; nombre: string };
+
+const OTRO_TIPO = "__otro__";
 
 export type EventoFormValues = {
   cliente_id: string;
   nombre: string;
-  tipo: EventoTipo;
+  tipo: string;
   fecha: string;
   invitados: number;
   estado: EventoEstado;
@@ -45,11 +44,13 @@ function SubmitButton({ label }: { label: string }) {
 
 export function EventoForm({
   clientes,
+  tiposUsados,
   defaultValues,
   action,
   submitLabel,
 }: {
   clientes: ClienteOption[];
+  tiposUsados: string[];
   defaultValues?: EventoFormValues;
   action: (
     prevState: EventoFormState,
@@ -61,6 +62,11 @@ export function EventoForm({
   const [modoCliente, setModoCliente] = useState<"existente" | "nuevo">(
     defaultValues?.cliente_id || clientes.length > 0 ? "existente" : "nuevo",
   );
+
+  const [tipoSeleccionado, setTipoSeleccionado] = useState(
+    defaultValues?.tipo ?? "",
+  );
+  const esTipoOtro = tipoSeleccionado === OTRO_TIPO;
 
   const [invitados, setInvitados] = useState(
     defaultValues?.invitados?.toString() ?? "",
@@ -146,6 +152,11 @@ export function EventoForm({
               placeholder="Email (opcional)"
               className={inputClasses}
             />
+            <input
+              name="cliente_ruc_ci"
+              placeholder="RUC o CI (opcional)"
+              className={inputClasses}
+            />
           </div>
         )}
       </div>
@@ -170,17 +181,30 @@ export function EventoForm({
           </label>
           <select
             id="tipo"
-            name="tipo"
-            defaultValue={defaultValues?.tipo}
+            name="tipo_seleccionado"
+            value={tipoSeleccionado}
+            onChange={(e) => setTipoSeleccionado(e.target.value)}
             required
             className={inputClasses}
           >
-            {TIPO_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            <option value="" disabled>
+              Seleccioná un tipo
+            </option>
+            {tiposUsados.map((tipo) => (
+              <option key={tipo} value={tipo}>
+                {tipoLabel(tipo)}
               </option>
             ))}
+            <option value={OTRO_TIPO}>+ Otro</option>
           </select>
+          {esTipoOtro && (
+            <input
+              name="tipo_nuevo"
+              placeholder="Nombre del tipo nuevo"
+              required
+              className={inputClasses}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2">

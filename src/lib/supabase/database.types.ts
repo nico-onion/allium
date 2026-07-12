@@ -11,15 +11,6 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type EventoTipo =
-  | "cena_pasos"
-  | "asado"
-  | "finger_food"
-  | "combo"
-  | "maridaje"
-  | "pizzas"
-  | "box";
-
 export type EventoEstado =
   | "cotizado"
   | "confirmado"
@@ -48,6 +39,7 @@ export interface Database {
           telefono: string | null;
           email: string | null;
           instagram: string | null;
+          ruc_ci: string | null;
           notas: string | null;
           creado_en: string;
         };
@@ -57,6 +49,7 @@ export interface Database {
           telefono?: string | null;
           email?: string | null;
           instagram?: string | null;
+          ruc_ci?: string | null;
           notas?: string | null;
           creado_en?: string;
         };
@@ -66,6 +59,7 @@ export interface Database {
           telefono?: string | null;
           email?: string | null;
           instagram?: string | null;
+          ruc_ci?: string | null;
           notas?: string | null;
           creado_en?: string;
         };
@@ -76,7 +70,7 @@ export interface Database {
           id: string;
           cliente_id: string;
           nombre: string;
-          tipo: EventoTipo;
+          tipo: string;
           fecha: string;
           invitados: number;
           estado: EventoEstado;
@@ -92,7 +86,7 @@ export interface Database {
           id?: string;
           cliente_id: string;
           nombre: string;
-          tipo: EventoTipo;
+          tipo: string;
           fecha: string;
           invitados: number;
           estado?: EventoEstado;
@@ -108,7 +102,7 @@ export interface Database {
           id?: string;
           cliente_id?: string;
           nombre?: string;
-          tipo?: EventoTipo;
+          tipo?: string;
           fecha?: string;
           invitados?: number;
           estado?: EventoEstado;

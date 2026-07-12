@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, EventoEstado } from "@/lib/supabase/database.types";
+import { TIPOS_BASE } from "@/lib/eventos/constants";
 
 export async function getEventos(
   supabase: SupabaseClient<Database>,
@@ -46,6 +47,21 @@ export async function getClientesParaSelector(supabase: SupabaseClient<Database>
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+// tipo es texto libre: el selector combina los tipos base conocidos del
+// negocio (siempre disponibles, aunque no se haya cargado ningún evento
+// todavía con ese tipo) con cualquier otro valor que ya se haya escrito a
+// mano vía "+ Otro" en eventos existentes.
+export async function getTiposDeEventoUsados(
+  supabase: SupabaseClient<Database>,
+): Promise<string[]> {
+  const { data, error } = await supabase.from("eventos").select("tipo");
+
+  if (error) throw new Error(error.message);
+
+  const tipos = new Set([...TIPOS_BASE, ...data.map((evento) => evento.tipo)]);
+  return Array.from(tipos).sort((a, b) => a.localeCompare(b));
 }
 
 export async function getMenuDeEvento(

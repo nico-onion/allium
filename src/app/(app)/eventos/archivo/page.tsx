@@ -6,8 +6,8 @@ import {
   ESTADO_LABELS,
   ESTADO_OPTIONS_ARCHIVO,
   ESTADOS_ARCHIVO,
-  TIPO_LABELS,
   isEventoEstado,
+  tipoLabel,
 } from "@/lib/eventos/constants";
 import { formatFecha, formatGuaranies } from "@/lib/format";
 import { FileIcon } from "@/components/icons/FileIcon";
@@ -101,7 +101,7 @@ export default async function ArchivoEventosPage({
               </div>
             </div>
             <span className="text-sm text-zinc-500">
-              {TIPO_LABELS[evento.tipo]} · {evento.invitados} invitados
+              {tipoLabel(evento.tipo)} · {evento.invitados} invitados
             </span>
             <div className="mt-1 flex items-center justify-between text-sm">
               <span className="text-zinc-500">{formatFecha(evento.fecha)}</span>

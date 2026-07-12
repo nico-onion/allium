@@ -1,11 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { getClientesParaSelector } from "@/lib/eventos/queries";
+import { getClientesParaSelector, getTiposDeEventoUsados } from "@/lib/eventos/queries";
 import { EventoForm } from "@/components/eventos/EventoForm";
 import { crearEvento } from "../actions";
 
 export default async function NuevoEventoPage() {
   const supabase = await createClient();
-  const clientes = await getClientesParaSelector(supabase);
+  const [clientes, tiposUsados] = await Promise.all([
+    getClientesParaSelector(supabase),
+    getTiposDeEventoUsados(supabase),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -14,6 +17,7 @@ export default async function NuevoEventoPage() {
       </h1>
       <EventoForm
         clientes={clientes}
+        tiposUsados={tiposUsados}
         action={crearEvento}
         submitLabel="Crear evento"
       />
