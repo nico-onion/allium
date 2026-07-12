@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getEvento } from "@/lib/eventos/queries";
+import {
+  getEvento,
+  getMenuDeEvento,
+  getMenuItems,
+  getRecetaInsumosDeRecetas,
+  getRecetasParaSelector,
+} from "@/lib/eventos/queries";
+import { getInsumosParaSelector } from "@/lib/insumos/queries";
+import { calcularPackingList } from "@/lib/eventos/packing-list";
 import {
   ESTADO_ACCION_RAPIDA_CLASSES,
   ESTADO_ACCION_RAPIDA_LABELS,
@@ -12,7 +20,17 @@ import {
 import { formatFecha, formatGuaranies } from "@/lib/format";
 import { EstadoRapidoBoton } from "@/components/eventos/EstadoRapidoBoton";
 import { EliminarEventoForm } from "@/components/eventos/EliminarEventoForm";
+import { CrearMenuForm } from "@/components/eventos/CrearMenuForm";
+import { AgregarAlMenuForm } from "@/components/eventos/AgregarAlMenuForm";
+import { PackingListTable } from "@/components/eventos/PackingListTable";
 import { cambiarEstadoEvento, eliminarEvento } from "../actions";
+import {
+  actualizarCantidadMenuItem,
+  agregarRecetaAlMenu,
+  crearMenu,
+  crearRecetaYAgregarAlMenu,
+  eliminarMenuItem,
+} from "../menu-actions";
 import type { EventoEstado } from "@/lib/supabase/database.types";
 
 const ACCIONES_RAPIDAS = Object.keys(
@@ -40,6 +58,21 @@ export default async function EventoDetallePage({
   const evento = await getEvento(supabase, id);
 
   if (!evento) notFound();
+
+  const menu = await getMenuDeEvento(supabase, evento.id);
+  const menuItems = menu ? await getMenuItems(supabase, menu.id) : [];
+  const recetaInsumos = menu
+    ? await getRecetaInsumosDeRecetas(
+        supabase,
+        [...new Set(menuItems.map((item) => item.receta_id))],
+      )
+    : [];
+  const packingList = calcularPackingList(menuItems, recetaInsumos);
+
+  const [recetas, insumos] = await Promise.all([
+    getRecetasParaSelector(supabase),
+    getInsumosParaSelector(supabase),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 py-4">
@@ -100,6 +133,104 @@ export default async function EventoDetallePage({
       >
         Editar evento
       </Link>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold text-bordo-600">
+          Menú
+        </h2>
+
+        {!menu ? (
+          <CrearMenuForm action={crearMenu.bind(null, evento.id)} />
+        ) : (
+          <>
+            <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4">
+              <span className="text-sm font-medium text-zinc-600">
+                {menu.nombre}
+              </span>
+              {menuItems.length === 0 ? (
+                <p className="text-sm text-zinc-400">
+                  Todavía no agregaste recetas a este menú.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {menuItems.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0"
+                    >
+                      <span className="text-sm text-zinc-900">
+                        {item.recetas?.nombre ?? "Receta"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <form
+                          action={actualizarCantidadMenuItem.bind(
+                            null,
+                            evento.id,
+                            item.id,
+                          )}
+                          className="flex items-center gap-1"
+                        >
+                          <input
+                            name="cantidad_porciones"
+                            type="number"
+                            min={1}
+                            defaultValue={item.cantidad_porciones}
+                            className="w-16 rounded-lg border border-zinc-200 px-2 py-1 text-sm"
+                          />
+                          <button
+                            type="submit"
+                            className="text-xs text-zinc-500 underline-offset-2 hover:underline"
+                          >
+                            Guardar
+                          </button>
+                        </form>
+                        <form
+                          action={eliminarMenuItem.bind(
+                            null,
+                            evento.id,
+                            item.id,
+                          )}
+                        >
+                          <button
+                            type="submit"
+                            className="px-1 text-zinc-400"
+                            aria-label="Quitar receta del menú"
+                          >
+                            ✕
+                          </button>
+                        </form>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <AgregarAlMenuForm
+              recetas={recetas}
+              insumos={insumos}
+              cantidadPorDefecto={evento.invitados}
+              agregarExistenteAction={agregarRecetaAlMenu.bind(
+                null,
+                evento.id,
+                menu.id,
+              )}
+              crearNuevaAction={crearRecetaYAgregarAlMenu.bind(
+                null,
+                evento.id,
+                menu.id,
+              )}
+            />
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-zinc-600">
+                Lista de compras
+              </span>
+              <PackingListTable items={packingList} />
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <span className="text-xs uppercase tracking-wide text-zinc-400">

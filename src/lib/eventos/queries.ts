@@ -47,3 +47,58 @@ export async function getClientesParaSelector(supabase: SupabaseClient<Database>
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function getMenuDeEvento(
+  supabase: SupabaseClient<Database>,
+  eventoId: string,
+) {
+  const { data, error } = await supabase
+    .from("menus")
+    .select("id, nombre")
+    .eq("evento_id", eventoId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getMenuItems(
+  supabase: SupabaseClient<Database>,
+  menuId: string,
+) {
+  const { data, error } = await supabase
+    .from("menu_items")
+    .select("id, cantidad_porciones, receta_id, recetas(nombre, porcion_base)")
+    .eq("menu_id", menuId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getRecetaInsumosDeRecetas(
+  supabase: SupabaseClient<Database>,
+  recetaIds: string[],
+) {
+  if (recetaIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("receta_insumos")
+    .select("receta_id, insumo_id, cantidad, unidad, insumos(nombre)")
+    .in("receta_id", recetaIds);
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getRecetasParaSelector(supabase: SupabaseClient<Database>) {
+  const { data, error } = await supabase
+    .from("recetas")
+    .select("id, nombre, porcion_base")
+    .order("nombre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}

@@ -30,6 +30,8 @@ export type EventoEstado =
 
 export type PersonalRol = "cocina" | "mozo" | "logistica";
 
+export type InsumoUnidad = "kg" | "g" | "l" | "ml" | "unidad" | "docena";
+
 export type MovimientoTipo = "ingreso" | "egreso";
 
 export type MovimientoOrigen = "BILL" | "manual";
@@ -206,7 +208,6 @@ export interface Database {
           nombre: string;
           categoria: string | null;
           porcion_base: number;
-          costo_estimado: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -215,7 +216,6 @@ export interface Database {
           nombre: string;
           categoria?: string | null;
           porcion_base?: number;
-          costo_estimado?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -224,7 +224,6 @@ export interface Database {
           nombre?: string;
           categoria?: string | null;
           porcion_base?: number;
-          costo_estimado?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -236,7 +235,7 @@ export interface Database {
           receta_id: string;
           insumo_id: string;
           cantidad: number;
-          unidad: string;
+          unidad: InsumoUnidad;
           created_at: string;
           updated_at: string;
         };
@@ -245,7 +244,7 @@ export interface Database {
           receta_id: string;
           insumo_id: string;
           cantidad: number;
-          unidad: string;
+          unidad: InsumoUnidad;
           created_at?: string;
           updated_at?: string;
         };
@@ -254,7 +253,7 @@ export interface Database {
           receta_id?: string;
           insumo_id?: string;
           cantidad?: number;
-          unidad?: string;
+          unidad?: InsumoUnidad;
           created_at?: string;
           updated_at?: string;
         };
@@ -279,9 +278,11 @@ export interface Database {
         Row: {
           id: string;
           nombre: string;
-          unidad: string;
+          categoria: string | null;
+          unidad: InsumoUnidad;
           costo_unitario: number;
           stock_actual: number;
+          stock_minimo: number;
           proveedor_id: string | null;
           created_at: string;
           updated_at: string;
@@ -289,9 +290,11 @@ export interface Database {
         Insert: {
           id?: string;
           nombre: string;
-          unidad: string;
+          categoria?: string | null;
+          unidad: InsumoUnidad;
           costo_unitario?: number;
           stock_actual?: number;
+          stock_minimo?: number;
           proveedor_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -299,9 +302,11 @@ export interface Database {
         Update: {
           id?: string;
           nombre?: string;
-          unidad?: string;
+          categoria?: string | null;
+          unidad?: InsumoUnidad;
           costo_unitario?: number;
           stock_actual?: number;
+          stock_minimo?: number;
           proveedor_id?: string | null;
           created_at?: string;
           updated_at?: string;

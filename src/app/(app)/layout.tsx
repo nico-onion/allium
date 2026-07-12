@@ -15,7 +15,19 @@ export default function AppLayout({
         >
           ERP Allium
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+          <Link
+            href="/recetas"
+            className="text-sm text-zinc-500 underline-offset-2 hover:underline"
+          >
+            Recetas
+          </Link>
+          <Link
+            href="/insumos"
+            className="text-sm text-zinc-500 underline-offset-2 hover:underline"
+          >
+            Insumos
+          </Link>
           <Link
             href="/eventos/archivo"
             className="text-sm text-zinc-500 underline-offset-2 hover:underline"
