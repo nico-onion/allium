@@ -18,13 +18,6 @@ import { formatFecha, formatGuaranies } from "@/lib/format";
 
 const RANGO_MESES = 12;
 
-const ACCESOS_RAPIDOS = [
-  { href: "/eventos", label: "Eventos" },
-  { href: "/recetas", label: "Recetas" },
-  { href: "/insumos", label: "Insumos" },
-  { href: "/eventos/archivo", label: "Archivo" },
-];
-
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -178,23 +171,6 @@ export default async function DashboardPage({
             {insumosEnAlerta}
           </span>
         </Link>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-zinc-600">
-          Accesos rápidos
-        </span>
-        <div className="grid grid-cols-2 gap-3">
-          {ACCESOS_RAPIDOS.map((acceso) => (
-            <Link
-              key={acceso.href}
-              href={acceso.href}
-              className="rounded-xl border border-zinc-200 bg-white p-4 text-center font-medium text-zinc-900 active:bg-zinc-50"
-            >
-              {acceso.label}
-            </Link>
-          ))}
-        </div>
       </div>
     </div>
   );
