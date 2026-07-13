@@ -2,9 +2,12 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { UNIDAD_OPTIONS } from "@/lib/insumos/constants";
+import { TIPO_ALMACENAMIENTO_OPTIONS, UNIDAD_OPTIONS } from "@/lib/insumos/constants";
 import type { InsumoFormState } from "@/app/(app)/insumos/actions";
-import type { InsumoUnidad } from "@/lib/supabase/database.types";
+import type {
+  InsumoTipoAlmacenamiento,
+  InsumoUnidad,
+} from "@/lib/supabase/database.types";
 
 type ProveedorOption = { id: string; nombre: string };
 
@@ -12,6 +15,7 @@ export type InsumoFormValues = {
   nombre: string;
   categoria: string | null;
   unidad: InsumoUnidad;
+  tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
   costo_unitario: number;
   stock_actual: number;
   stock_minimo: number;
@@ -82,6 +86,25 @@ export function InsumoForm({
           defaultValue={defaultValues?.categoria ?? ""}
           className={inputClasses}
         />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="tipo_almacenamiento" className={labelClasses}>
+          Tipo de almacenamiento
+        </label>
+        <select
+          id="tipo_almacenamiento"
+          name="tipo_almacenamiento"
+          defaultValue={defaultValues?.tipo_almacenamiento ?? ""}
+          className={inputClasses}
+        >
+          <option value="">Sin especificar</option>
+          {TIPO_ALMACENAMIENTO_OPTIONS.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

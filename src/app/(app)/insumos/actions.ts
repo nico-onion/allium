@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
+import type {
+  Database,
+  InsumoTipoAlmacenamiento,
+  InsumoUnidad,
+} from "@/lib/supabase/database.types";
 
 export type InsumoFormState = { error?: string };
 
@@ -38,10 +42,13 @@ async function resolveProveedorId(
 }
 
 function buildInsumoPayload(formData: FormData, proveedorId: string | null) {
+  const tipoAlmacenamiento = (formData.get("tipo_almacenamiento") as string) || null;
+
   return {
     nombre: (formData.get("nombre") as string).trim(),
     categoria: (formData.get("categoria") as string)?.trim() || null,
     unidad: formData.get("unidad") as InsumoUnidad,
+    tipo_almacenamiento: tipoAlmacenamiento as InsumoTipoAlmacenamiento | null,
     costo_unitario: Number(formData.get("costo_unitario")) || 0,
     stock_actual: Number(formData.get("stock_actual")) || 0,
     stock_minimo: Number(formData.get("stock_minimo")) || 0,

@@ -1,4 +1,5 @@
 import type {
+  InsumoTipoAlmacenamiento,
   InsumoUnidad,
   TipoMovimientoStock,
 } from "@/lib/supabase/database.types";
@@ -25,6 +26,15 @@ export const UNIDAD_OPTIONS = Object.entries(UNIDAD_LABELS) as [
   InsumoUnidad,
   string,
 ][];
+
+export const TIPO_ALMACENAMIENTO_LABELS: Record<InsumoTipoAlmacenamiento, string> = {
+  seco: "Seco",
+  refrigerado: "Refrigerado",
+};
+
+export const TIPO_ALMACENAMIENTO_OPTIONS = Object.entries(
+  TIPO_ALMACENAMIENTO_LABELS,
+) as [InsumoTipoAlmacenamiento, string][];
 
 export const TIPO_MOVIMIENTO_LABELS: Record<TipoMovimientoStock, string> = {
   compra: "Compra",

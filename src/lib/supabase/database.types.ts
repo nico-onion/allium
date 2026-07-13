@@ -29,6 +29,8 @@ export type MovimientoOrigen = "BILL" | "manual";
 
 export type TipoMovimientoStock = "compra" | "uso_evento" | "ajuste" | "merma";
 
+export type InsumoTipoAlmacenamiento = "seco" | "refrigerado";
+
 export interface Database {
   public: {
     Tables: {
@@ -276,6 +278,7 @@ export interface Database {
           nombre: string;
           categoria: string | null;
           unidad: InsumoUnidad;
+          tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
           costo_unitario: number;
           stock_actual: number;
           stock_minimo: number;
@@ -288,6 +291,7 @@ export interface Database {
           nombre: string;
           categoria?: string | null;
           unidad: InsumoUnidad;
+          tipo_almacenamiento?: InsumoTipoAlmacenamiento | null;
           costo_unitario?: number;
           stock_actual?: number;
           stock_minimo?: number;
@@ -300,6 +304,7 @@ export interface Database {
           nombre?: string;
           categoria?: string | null;
           unidad?: InsumoUnidad;
+          tipo_almacenamiento?: InsumoTipoAlmacenamiento | null;
           costo_unitario?: number;
           stock_actual?: number;
           stock_minimo?: number;

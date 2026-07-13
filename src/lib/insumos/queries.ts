@@ -5,7 +5,7 @@ export async function getInsumos(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("insumos")
     .select(
-      "id, nombre, categoria, unidad, costo_unitario, stock_actual, stock_minimo, proveedores(nombre)",
+      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, stock_actual, stock_minimo, proveedores(nombre)",
     )
     .order("nombre", { ascending: true });
 
@@ -17,7 +17,7 @@ export async function getInsumo(supabase: SupabaseClient<Database>, id: string) 
   const { data, error } = await supabase
     .from("insumos")
     .select(
-      "id, nombre, categoria, unidad, costo_unitario, stock_actual, stock_minimo, proveedor_id, proveedores(id, nombre)",
+      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, stock_actual, stock_minimo, proveedor_id, proveedores(id, nombre)",
     )
     .eq("id", id)
     .maybeSingle();

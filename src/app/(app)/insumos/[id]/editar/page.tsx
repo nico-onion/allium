@@ -41,6 +41,7 @@ export default async function EditarInsumoPage({
             nombre: insumo.nombre,
             categoria: insumo.categoria,
             unidad: insumo.unidad,
+            tipo_almacenamiento: insumo.tipo_almacenamiento,
             costo_unitario: insumo.costo_unitario,
             stock_actual: insumo.stock_actual,
             stock_minimo: insumo.stock_minimo,

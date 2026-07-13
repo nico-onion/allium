@@ -1,13 +1,17 @@
 import Link from "next/link";
-import { UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
+import { TIPO_ALMACENAMIENTO_LABELS, UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { estaBajoStockMinimo } from "@/lib/insumos/categorias";
 import { formatGuaranies } from "@/lib/format";
-import type { InsumoUnidad } from "@/lib/supabase/database.types";
+import type {
+  InsumoTipoAlmacenamiento,
+  InsumoUnidad,
+} from "@/lib/supabase/database.types";
 
 export type InsumoParaCard = {
   id: string;
   nombre: string;
   unidad: InsumoUnidad;
+  tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
   costo_unitario: number;
   stock_actual: number;
   stock_minimo: number;
@@ -30,6 +34,11 @@ export function InsumoCard({ insumo }: { insumo: InsumoParaCard }) {
           {enAlerta && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
               Bajo stock
+            </span>
+          )}
+          {insumo.tipo_almacenamiento && (
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">
+              {TIPO_ALMACENAMIENTO_LABELS[insumo.tipo_almacenamiento]}
             </span>
           )}
           <span className="text-xs text-zinc-400">
