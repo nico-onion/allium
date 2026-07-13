@@ -553,7 +553,10 @@ export interface Database {
           cantidad: number;
           unidad: InsumoUnidad;
           evento_id: string | null;
+          compra_id: string | null;
           nota: string | null;
+          verificado: boolean;
+          nota_verificacion: string | null;
           created_at: string;
         };
         Insert: {
@@ -563,7 +566,10 @@ export interface Database {
           cantidad: number;
           unidad: InsumoUnidad;
           evento_id?: string | null;
+          compra_id?: string | null;
           nota?: string | null;
+          verificado?: boolean;
+          nota_verificacion?: string | null;
           created_at?: string;
         };
         Update: {
@@ -573,7 +579,10 @@ export interface Database {
           cantidad?: number;
           unidad?: InsumoUnidad;
           evento_id?: string | null;
+          compra_id?: string | null;
           nota?: string | null;
+          verificado?: boolean;
+          nota_verificacion?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -589,6 +598,45 @@ export interface Database {
             columns: ["evento_id"];
             isOneToOne: false;
             referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimientos_stock_compra_id_fkey";
+            columns: ["compra_id"];
+            isOneToOne: false;
+            referencedRelation: "compras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      compras: {
+        Row: {
+          id: string;
+          proveedor_id: string | null;
+          fecha: string;
+          numero_factura: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          proveedor_id?: string | null;
+          fecha?: string;
+          numero_factura?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          proveedor_id?: string | null;
+          fecha?: string;
+          numero_factura?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "compras_proveedor_id_fkey";
+            columns: ["proveedor_id"];
+            isOneToOne: false;
+            referencedRelation: "proveedores";
             referencedColumns: ["id"];
           },
         ];

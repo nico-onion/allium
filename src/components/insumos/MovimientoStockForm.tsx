@@ -30,7 +30,7 @@ export function MovimientoStockForm({
   ) => Promise<MovimientoStockFormState>;
 }) {
   const [state, formAction] = useActionState(action, {});
-  const [tipo, setTipo] = useState<(typeof TIPOS_MOVIMIENTO_MANUAL)[number]>("compra");
+  const [tipo, setTipo] = useState<(typeof TIPOS_MOVIMIENTO_MANUAL)[number]>("ajuste");
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">

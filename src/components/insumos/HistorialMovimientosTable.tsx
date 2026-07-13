@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { TIPO_MOVIMIENTO_LABELS, UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { formatCantidad, formatFecha } from "@/lib/format";
@@ -12,8 +13,13 @@ export type MovimientoParaHistorial = {
   createdAt: string;
   eventoId: string | null;
   eventoNombre: string | null;
+  compraId: string | null;
+  verificado: boolean;
+  notaVerificacion: string | null;
 };
 
+// Historial de solo lectura: la verificación de compras se hace en
+// /compras/[id], acá solo se muestra el estado y un link para ir a resolverla.
 export function HistorialMovimientosTable({
   movimientos,
 }: {
@@ -39,36 +45,74 @@ export function HistorialMovimientosTable({
           </tr>
         </thead>
         <tbody>
-          {movimientos.map((mov) => (
-            <tr key={mov.id} className="border-b border-zinc-100 last:border-0">
-              <td className="whitespace-nowrap px-3 py-2 text-zinc-500">
-                {formatFecha(mov.createdAt)}
-              </td>
-              <td className="px-3 py-2 text-zinc-900">
-                {TIPO_MOVIMIENTO_LABELS[mov.tipo]}
-                {mov.eventoId && (
-                  <>
-                    {" "}
-                    <Link
-                      href={`/eventos/${mov.eventoId}`}
-                      className="text-fucsia-600 underline-offset-2 hover:underline"
-                    >
-                      ({mov.eventoNombre ?? "ver evento"})
-                    </Link>
-                  </>
+          {movimientos.map((mov) => {
+            const esCompra = mov.tipo === "compra";
+
+            return (
+              <Fragment key={mov.id}>
+                <tr className="border-b border-zinc-100 last:border-0">
+                  <td className="whitespace-nowrap px-3 py-2 text-zinc-500">
+                    {formatFecha(mov.createdAt)}
+                  </td>
+                  <td className="px-3 py-2 text-zinc-900">
+                    {TIPO_MOVIMIENTO_LABELS[mov.tipo]}
+                    {esCompra &&
+                      (mov.verificado ? (
+                        <span
+                          className="ml-1 text-emerald-600"
+                          title="Recepción verificada"
+                        >
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="ml-1 text-xs text-amber-600">
+                          (pendiente)
+                        </span>
+                      ))}
+                    {mov.eventoId && (
+                      <>
+                        {" "}
+                        <Link
+                          href={`/eventos/${mov.eventoId}`}
+                          className="text-fucsia-600 underline-offset-2 hover:underline"
+                        >
+                          ({mov.eventoNombre ?? "ver evento"})
+                        </Link>
+                      </>
+                    )}
+                    {mov.compraId && (
+                      <>
+                        {" "}
+                        <Link
+                          href={`/compras/${mov.compraId}`}
+                          className="text-fucsia-600 underline-offset-2 hover:underline"
+                        >
+                          (ver compra)
+                        </Link>
+                      </>
+                    )}
+                  </td>
+                  <td
+                    className={`px-3 py-2 text-right font-medium ${
+                      mov.cantidad < 0 ? "text-red-600" : "text-emerald-600"
+                    }`}
+                  >
+                    {mov.cantidad > 0 ? "+" : ""}
+                    {formatCantidad(mov.cantidad)} {UNIDAD_LABELS_CORTAS[mov.unidad]}
+                  </td>
+                  <td className="px-3 py-2 text-zinc-500">{mov.nota ?? "-"}</td>
+                </tr>
+
+                {esCompra && mov.verificado && mov.notaVerificacion && (
+                  <tr className="border-b border-zinc-100 bg-amber-50">
+                    <td colSpan={4} className="px-3 py-2 text-xs text-amber-800">
+                      Discrepancia reportada: {mov.notaVerificacion}
+                    </td>
+                  </tr>
                 )}
-              </td>
-              <td
-                className={`px-3 py-2 text-right font-medium ${
-                  mov.cantidad < 0 ? "text-red-600" : "text-emerald-600"
-                }`}
-              >
-                {mov.cantidad > 0 ? "+" : ""}
-                {formatCantidad(mov.cantidad)} {UNIDAD_LABELS_CORTAS[mov.unidad]}
-              </td>
-              <td className="px-3 py-2 text-zinc-500">{mov.nota ?? "-"}</td>
-            </tr>
-          ))}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

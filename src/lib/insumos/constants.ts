@@ -43,7 +43,8 @@ export const TIPO_MOVIMIENTO_LABELS: Record<TipoMovimientoStock, string> = {
   merma: "Merma",
 };
 
-// uso_evento no es seleccionable a mano: lo genera el sistema al reconciliar
-// el cierre de un evento.
-export const TIPOS_MOVIMIENTO_MANUAL = ["compra", "ajuste", "merma"] as const;
+// uso_evento no es seleccionable a mano (lo genera el sistema al reconciliar
+// el cierre de un evento), y compra tampoco (se carga desde /compras, no
+// desde la ficha del insumo).
+export const TIPOS_MOVIMIENTO_MANUAL = ["ajuste", "merma"] as const;
 

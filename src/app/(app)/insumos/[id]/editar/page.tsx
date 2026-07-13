@@ -67,6 +67,9 @@ export default async function EditarInsumoPage({
             createdAt: mov.created_at,
             eventoId: mov.evento_id,
             eventoNombre: mov.eventos?.nombre ?? null,
+            compraId: mov.compra_id,
+            verificado: mov.verificado,
+            notaVerificacion: mov.nota_verificacion,
           }))}
         />
 

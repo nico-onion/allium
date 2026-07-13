@@ -23,6 +23,16 @@ export function toDatetimeLocalValue(iso: string): string {
   return iso.slice(0, 16);
 }
 
+// Para columnas `date` (sin hora), donde formatFecha mostraría "00:00"
+// engañosamente.
+export function formatFechaCorta(fecha: string): string {
+  return new Intl.DateTimeFormat("es-PY", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(fecha));
+}
+
 export function formatCantidad(n: number): string {
   return Number(n.toFixed(2)).toString();
 }

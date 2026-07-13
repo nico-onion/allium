@@ -16,9 +16,11 @@ type InsumoDashboard = InsumoParaCard & { categoria: string | null };
 export function InsumosDashboard({
   insumos,
   categoriaInicial,
+  cantidadDiscrepancias,
 }: {
   insumos: InsumoDashboard[];
   categoriaInicial?: string;
+  cantidadDiscrepancias: number;
 }) {
   const [query, setQuery] = useState("");
 
@@ -110,6 +112,20 @@ export function InsumosDashboard({
                     ))}
                   </div>
                 </div>
+              )}
+
+              {cantidadDiscrepancias > 0 && (
+                <Link
+                  href="/compras"
+                  className="block rounded-xl bg-amber-50 p-3 active:bg-amber-100"
+                >
+                  <p className="text-sm font-medium text-amber-800">
+                    {cantidadDiscrepancias} discrepancia
+                    {cantidadDiscrepancias === 1 ? "" : "s"} de compra
+                    reportada{cantidadDiscrepancias === 1 ? "" : "s"} — revisá
+                    en Compras.
+                  </p>
+                </Link>
               )}
 
               <div className="flex flex-col gap-2">

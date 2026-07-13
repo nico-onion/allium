@@ -12,7 +12,7 @@ import {
   parseMesParam,
 } from "@/lib/dashboard/mes";
 import { SelectorMes } from "@/components/dashboard/SelectorMes";
-import { getInsumos } from "@/lib/insumos/queries";
+import { getCantidadDiscrepancias, getInsumos } from "@/lib/insumos/queries";
 import { estaBajoStockMinimo } from "@/lib/insumos/categorias";
 import { formatFecha, formatGuaranies } from "@/lib/format";
 
@@ -33,12 +33,14 @@ export default async function DashboardPage({
   const inicioMes = new Date(mesSeleccionado.year, mesSeleccionado.month, 1);
   const finMes = new Date(mesSeleccionado.year, mesSeleccionado.month + 1, 1);
 
-  const [resumenMes, metricasFinancieras, proximoEvento, insumos] = await Promise.all([
-    getResumenMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
-    getMetricasFinancierasMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
-    getProximoEvento(supabase, ahora.toISOString()),
-    getInsumos(supabase),
-  ]);
+  const [resumenMes, metricasFinancieras, proximoEvento, insumos, cantidadDiscrepancias] =
+    await Promise.all([
+      getResumenMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
+      getMetricasFinancierasMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
+      getProximoEvento(supabase, ahora.toISOString()),
+      getInsumos(supabase),
+      getCantidadDiscrepancias(supabase),
+    ]);
 
   const insumosEnAlerta = insumos.filter(estaBajoStockMinimo).length;
   const opcionesMes = generarOpcionesMes(mesActual, RANGO_MESES);
@@ -169,6 +171,28 @@ export default async function DashboardPage({
             }`}
           >
             {insumosEnAlerta}
+          </span>
+        </Link>
+
+        <Link
+          href="/compras"
+          className={`flex items-center justify-between rounded-xl border p-4 active:bg-zinc-50 ${
+            cantidadDiscrepancias > 0
+              ? "border-amber-200 bg-amber-50"
+              : "border-zinc-200 bg-white"
+          }`}
+        >
+          <span
+            className={`text-sm ${cantidadDiscrepancias > 0 ? "text-amber-800" : "text-zinc-500"}`}
+          >
+            Discrepancias de compra reportadas
+          </span>
+          <span
+            className={`text-2xl font-semibold ${
+              cantidadDiscrepancias > 0 ? "text-amber-800" : "text-zinc-400"
+            }`}
+          >
+            {cantidadDiscrepancias}
           </span>
         </Link>
       </div>

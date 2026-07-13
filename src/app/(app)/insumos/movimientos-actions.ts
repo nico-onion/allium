@@ -16,7 +16,7 @@ export async function crearMovimientoStockManual(
   const direccion = formData.get("direccion") as string;
   const nota = (formData.get("nota") as string)?.trim() || null;
 
-  if (!["compra", "ajuste", "merma"].includes(tipo)) {
+  if (!["ajuste", "merma"].includes(tipo)) {
     return { error: "Tipo de movimiento inválido." };
   }
   if (!magnitud || magnitud <= 0) {
@@ -24,13 +24,11 @@ export async function crearMovimientoStockManual(
   }
 
   const cantidad =
-    tipo === "compra"
-      ? magnitud
-      : tipo === "merma"
+    tipo === "merma"
+      ? -magnitud
+      : direccion === "restar"
         ? -magnitud
-        : direccion === "restar"
-          ? -magnitud
-          : magnitud;
+        : magnitud;
 
   const supabase = await createClient();
 

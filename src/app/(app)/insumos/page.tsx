@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getInsumos } from "@/lib/insumos/queries";
+import { getCantidadDiscrepancias, getInsumos } from "@/lib/insumos/queries";
 import { InsumosDashboard } from "@/components/insumos/InsumosDashboard";
 
 export default async function InsumosPage({
@@ -10,7 +10,10 @@ export default async function InsumosPage({
 }) {
   const { categoria } = await searchParams;
   const supabase = await createClient();
-  const insumos = await getInsumos(supabase);
+  const [insumos, cantidadDiscrepancias] = await Promise.all([
+    getInsumos(supabase),
+    getCantidadDiscrepancias(supabase),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -26,7 +29,11 @@ export default async function InsumosPage({
         </Link>
       </div>
 
-      <InsumosDashboard insumos={insumos} categoriaInicial={categoria} />
+      <InsumosDashboard
+        insumos={insumos}
+        categoriaInicial={categoria}
+        cantidadDiscrepancias={cantidadDiscrepancias}
+      />
     </div>
   );
 }

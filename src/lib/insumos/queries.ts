@@ -54,10 +54,27 @@ export async function getMovimientosStock(
 ) {
   const { data, error } = await supabase
     .from("movimientos_stock")
-    .select("id, tipo, cantidad, unidad, nota, created_at, evento_id, eventos(nombre)")
+    .select(
+      "id, tipo, cantidad, unidad, nota, created_at, evento_id, compra_id, verificado, nota_verificacion, eventos(nombre)",
+    )
     .eq("insumo_id", insumoId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+// Compras con una discrepancia reportada (nota_verificacion cargada), en
+// cualquier insumo — para no perderlas de vista en el dashboard/lista.
+export async function getCantidadDiscrepancias(
+  supabase: SupabaseClient<Database>,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("movimientos_stock")
+    .select("id", { count: "exact", head: true })
+    .eq("tipo", "compra")
+    .not("nota_verificacion", "is", null);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
