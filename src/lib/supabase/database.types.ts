@@ -31,6 +31,13 @@ export type TipoMovimientoStock = "compra" | "uso_evento" | "ajuste" | "merma";
 
 export type InsumoTipoAlmacenamiento = "seco" | "refrigerado";
 
+export type PresupuestoEstado =
+  | "enviado"
+  | "aceptado"
+  | "aceptado_con_cambios"
+  | "en_evaluacion"
+  | "rechazado";
+
 export interface Database {
   public: {
     Tables: {
@@ -637,6 +644,123 @@ export interface Database {
             columns: ["proveedor_id"];
             isOneToOne: false;
             referencedRelation: "proveedores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      presupuestos: {
+        Row: {
+          id: string;
+          numero: number;
+          cliente_id: string | null;
+          fecha_emision: string;
+          validez_dias: number;
+          tipo_evento: string;
+          fecha_evento: string | null;
+          horario: string | null;
+          lugar_direccion: string | null;
+          cantidad_personas: number | null;
+          incluye: string | null;
+          no_incluye: string;
+          estado: PresupuestoEstado;
+          evento_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          numero?: number;
+          cliente_id?: string | null;
+          fecha_emision?: string;
+          validez_dias?: number;
+          tipo_evento: string;
+          fecha_evento?: string | null;
+          horario?: string | null;
+          lugar_direccion?: string | null;
+          cantidad_personas?: number | null;
+          incluye?: string | null;
+          no_incluye?: string;
+          estado?: PresupuestoEstado;
+          evento_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          numero?: number;
+          cliente_id?: string | null;
+          fecha_emision?: string;
+          validez_dias?: number;
+          tipo_evento?: string;
+          fecha_evento?: string | null;
+          horario?: string | null;
+          lugar_direccion?: string | null;
+          cantidad_personas?: number | null;
+          incluye?: string | null;
+          no_incluye?: string;
+          estado?: PresupuestoEstado;
+          evento_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "presupuestos_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      presupuesto_items: {
+        Row: {
+          id: string;
+          presupuesto_id: string;
+          receta_id: string;
+          cantidad: number;
+          precio_unitario: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          presupuesto_id: string;
+          receta_id: string;
+          cantidad: number;
+          precio_unitario?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          presupuesto_id?: string;
+          receta_id?: string;
+          cantidad?: number;
+          precio_unitario?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "presupuesto_items_presupuesto_id_fkey";
+            columns: ["presupuesto_id"];
+            isOneToOne: false;
+            referencedRelation: "presupuestos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "presupuesto_items_receta_id_fkey";
+            columns: ["receta_id"];
+            isOneToOne: false;
+            referencedRelation: "recetas";
             referencedColumns: ["id"];
           },
         ];
