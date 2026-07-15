@@ -10,6 +10,21 @@ export async function marcarAsistencia(
   _prevState: MarcarFormState,
   formData: FormData,
 ): Promise<MarcarFormState> {
+  try {
+    return await guardarMarcacion(formData);
+  } catch (err) {
+    // Cualquier excepción no prevista (ej. timeout de red al subir la
+    // foto) tiene que volver como estado, nunca como throw sin capturar:
+    // si esto tira, useActionState no actualiza el estado y el botón
+    // queda "colgado" en el cliente sin ningún mensaje.
+    console.error("marcarAsistencia: error inesperado", err);
+    return {
+      error: err instanceof Error ? err.message : "No se pudo guardar la marcación.",
+    };
+  }
+}
+
+async function guardarMarcacion(formData: FormData): Promise<MarcarFormState> {
   const supabase = await createClient();
 
   const {
@@ -48,7 +63,15 @@ export async function marcarAsistencia(
       .from("marcaciones")
       .upload(ruta, foto, { contentType: foto.type || "image/jpeg" });
 
-    if (uploadError) return { error: uploadError.message };
+    if (uploadError) {
+      console.error("marcarAsistencia: falló la subida de la foto", {
+        nombre: foto.name,
+        tipo: foto.type,
+        bytes: foto.size,
+        error: uploadError.message,
+      });
+      return { error: `No se pudo subir la foto: ${uploadError.message}` };
+    }
     fotoUrl = ruta;
   }
 

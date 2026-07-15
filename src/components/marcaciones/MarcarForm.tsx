@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { MarcarFormState } from "@/app/(app)/marcar/actions";
 import type { MarcacionTipo } from "@/lib/supabase/database.types";
 
@@ -13,6 +13,17 @@ const PASO_LABELS: Record<Paso, string> = {
   guardando: "Guardando...",
 };
 
+// Debe quedar por debajo de experimental.serverActions.bodySizeLimit en
+// next.config.ts (15mb) — chequeo del lado del cliente para mostrar un
+// error claro al toque en vez de que el servidor rechace el request en
+// silencio (eso es justamente lo que dejaba el botón "colgado" antes).
+const LIMITE_FOTO_BYTES = 12 * 1024 * 1024;
+
+// Salvavidas: si por lo que sea el estado de la Server Action nunca
+// vuelve (ej. problema de red a mitad de la subida), no dejar el botón
+// colgado en "Guardando..." para siempre.
+const TIMEOUT_GUARDADO_MS = 25000;
+
 export function MarcarForm({
   siguienteTipo,
   action,
@@ -23,7 +34,11 @@ export function MarcarForm({
     formData: FormData,
   ) => Promise<MarcarFormState>;
 }) {
-  const [state, formAction] = useActionState(action, {});
+  // isPending queda en true desde que se dispara el submit (incluido vía
+  // requestSubmit, no solo un <button type="submit"> normal) hasta que la
+  // Server Action resuelve — evita tener que reinventar ese seguimiento a
+  // mano con estado propio.
+  const [state, formAction, isPending] = useActionState(action, {});
   const [paso, setPaso] = useState<Paso>("idle");
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
@@ -32,7 +47,20 @@ export function MarcarForm({
   const lngRef = useRef<HTMLInputElement>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
-  const procesando = paso !== "idle";
+  const procesando = paso !== "idle" || isPending;
+
+  // Salvavidas: si la Server Action nunca resuelve (ej. problema de red a
+  // mitad de la subida), no dejar el botón colgado en "Guardando..." sin
+  // ningún mensaje para siempre.
+  useEffect(() => {
+    if (!isPending) return;
+    const timeoutId = setTimeout(() => {
+      setErrorLocal(
+        "No se pudo confirmar que la marcación se haya guardado. Revisá tu conexión e intentá de nuevo.",
+      );
+    }, TIMEOUT_GUARDADO_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isPending]);
 
   // navigator.geolocation (y getUserMedia) exigen un contexto seguro
   // (HTTPS); localhost tiene una excepción especial que una IP de red
@@ -112,6 +140,14 @@ export function MarcarForm({
     try {
       await esperarFoto();
 
+      const archivo = fotoInputRef.current?.files?.[0];
+      if (archivo && archivo.size > LIMITE_FOTO_BYTES) {
+        setErrorLocal(
+          `La foto pesa ${(archivo.size / (1024 * 1024)).toFixed(1)}MB, demasiado para subir. Probá sacarla de nuevo (a veces ayuda bajar la resolución de la cámara en Ajustes).`,
+        );
+        return;
+      }
+
       setPaso("ubicacion");
       const ubicacion = await obtenerUbicacion();
 
@@ -158,7 +194,9 @@ export function MarcarForm({
         className="w-full rounded-xl bg-fucsia-600 py-6 text-lg font-semibold text-white disabled:opacity-60"
       >
         {procesando
-          ? PASO_LABELS[paso]
+          ? isPending && paso === "idle"
+            ? PASO_LABELS.guardando
+            : PASO_LABELS[paso]
           : siguienteTipo === "entrada"
             ? "Marcar entrada"
             : "Marcar salida"}
