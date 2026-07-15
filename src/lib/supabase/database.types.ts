@@ -362,6 +362,7 @@ export interface Database {
           nombre: string;
           rol: PersonalRol;
           telefono: string | null;
+          auth_user_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -370,6 +371,7 @@ export interface Database {
           nombre: string;
           rol: PersonalRol;
           telefono?: string | null;
+          auth_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -378,6 +380,7 @@ export interface Database {
           nombre?: string;
           rol?: PersonalRol;
           telefono?: string | null;
+          auth_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -767,6 +770,24 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      app_admins: {
+        Row: {
+          id: string;
+          auth_user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          auth_user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          auth_user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
