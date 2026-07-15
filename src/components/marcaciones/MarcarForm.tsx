@@ -101,8 +101,17 @@ export function MarcarForm({
   async function iniciarMarcacion() {
     setErrorLocal(null);
     setAvisoUbicacion(null);
+    // input.click() tiene que ser la primera acción síncrona de este
+    // handler, sin ningún await antes: iOS Safari bloquea en silencio la
+    // apertura de la cámara si no ocurre dentro del mismo gesto de click
+    // del usuario. Por eso la ubicación se pide DESPUÉS de la foto, no
+    // antes (esperarFoto() dispara el click de forma síncrona porque el
+    // executor de `new Promise` corre sincrónicamente).
+    setPaso("foto");
 
     try {
+      await esperarFoto();
+
       setPaso("ubicacion");
       const ubicacion = await obtenerUbicacion();
 
@@ -116,9 +125,6 @@ export function MarcarForm({
       } else {
         setAvisoUbicacion("Se marcó sin ubicación (permiso no concedido).");
       }
-
-      setPaso("foto");
-      await esperarFoto();
 
       setPaso("guardando");
       formRef.current?.requestSubmit();
