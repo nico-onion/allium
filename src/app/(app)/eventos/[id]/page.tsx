@@ -11,6 +11,7 @@ import {
 import { getInsumosParaSelector } from "@/lib/insumos/queries";
 import { calcularPackingList } from "@/lib/eventos/packing-list";
 import { getOrdenCompra } from "@/lib/ordenes-compra/queries";
+import { getPersonalParaSelector, getTurnosDeEvento } from "@/lib/staff/queries";
 import {
   ESTADO_ACCION_RAPIDA_CLASSES,
   ESTADO_ACCION_RAPIDA_LABELS,
@@ -27,6 +28,8 @@ import { PackingListTable } from "@/components/eventos/PackingListTable";
 import { RegenerarOrdenCompraBoton } from "@/components/eventos/RegenerarOrdenCompraBoton";
 import { EnviarOrdenPorEmailForm } from "@/components/eventos/EnviarOrdenPorEmailForm";
 import { OrdenCompraComparacionTable } from "@/components/eventos/OrdenCompraComparacionTable";
+import { AsignarStaffForm } from "@/components/eventos/AsignarStaffForm";
+import { StaffAsignadoList } from "@/components/eventos/StaffAsignadoList";
 import {
   cambiarEstadoEvento,
   eliminarEvento,
@@ -40,6 +43,11 @@ import {
   crearRecetaYAgregarAlMenu,
   eliminarMenuItem,
 } from "../menu-actions";
+import {
+  asignarPersonalAEvento,
+  eliminarTurno,
+  toggleConfirmadoTurno,
+} from "../turnos-actions";
 import type { EventoEstado } from "@/lib/supabase/database.types";
 
 const ACCIONES_RAPIDAS = Object.keys(
@@ -79,9 +87,11 @@ export default async function EventoDetallePage({
   const packingList = calcularPackingList(menuItems, recetaInsumos);
   const ordenCompra = await getOrdenCompra(supabase, evento.id);
 
-  const [recetas, insumos] = await Promise.all([
+  const [recetas, insumos, turnos, personalParaSelector] = await Promise.all([
     getRecetasParaSelector(supabase),
     getInsumosParaSelector(supabase),
+    getTurnosDeEvento(supabase, evento.id),
+    getPersonalParaSelector(supabase),
   ]);
 
   return (
@@ -287,6 +297,23 @@ export default async function EventoDetallePage({
             />
           )}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold text-bordo-600">
+          Staff asignado
+        </h2>
+
+        <StaffAsignadoList
+          turnos={turnos}
+          toggleConfirmadoAction={toggleConfirmadoTurno.bind(null, evento.id)}
+          eliminarAction={eliminarTurno.bind(null, evento.id)}
+        />
+
+        <AsignarStaffForm
+          personal={personalParaSelector}
+          action={asignarPersonalAEvento.bind(null, evento.id)}
+        />
       </div>
 
       <div className="flex flex-col gap-2">

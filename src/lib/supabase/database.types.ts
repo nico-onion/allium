@@ -389,6 +389,7 @@ export interface Database {
           evento_id: string;
           personal_id: string;
           rol_en_evento: string;
+          costo: number | null;
           confirmado: boolean;
           created_at: string;
           updated_at: string;
@@ -398,6 +399,7 @@ export interface Database {
           evento_id: string;
           personal_id: string;
           rol_en_evento: string;
+          costo?: number | null;
           confirmado?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -407,6 +409,7 @@ export interface Database {
           evento_id?: string;
           personal_id?: string;
           rol_en_evento?: string;
+          costo?: number | null;
           confirmado?: boolean;
           created_at?: string;
           updated_at?: string;

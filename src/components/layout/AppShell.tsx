@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/proveedores", label: "Proveedores" },
   { href: "/cotizaciones", label: "Cotizaciones" },
   { href: "/eventos", label: "Eventos" },
-  { href: "/staff", label: "Staff", proximamente: true },
+  { href: "/staff", label: "Staff" },
   { href: "/recetas", label: "Recetas" },
   { href: "/eventos/archivo", label: "Archivo" },
 ];

@@ -81,7 +81,8 @@ export type MetricasFinancierasMes = {
 // los realizados), no facturación/cobros real — eso vendrá de BILL más
 // adelante. El margen solo se calcula sobre eventos ya reconciliados,
 // porque recién ahí se conoce el costo real de insumos usados (no el
-// estimado del menú).
+// estimado del menú). El costo real también suma el costo de staff
+// (turnos.costo) de todo el personal asignado al evento.
 export async function getMetricasFinancierasMes(
   supabase: SupabaseClient<Database>,
   inicioMes: string,
@@ -90,7 +91,7 @@ export async function getMetricasFinancierasMes(
   const { data: eventos, error } = await supabase
     .from("eventos")
     .select(
-      "precio_total, ordenes_compra(reconciliado, orden_compra_items(cantidad_usada, unidad, insumos(costo_unitario, unidad)))",
+      "precio_total, ordenes_compra(reconciliado, orden_compra_items(cantidad_usada, unidad, insumos(costo_unitario, unidad))), turnos(costo)",
     )
     .gte("fecha", inicioMes)
     .lt("fecha", finMes)
@@ -129,8 +130,13 @@ export async function getMetricasFinancierasMes(
 
     const { costoTotal } = calcularCostoReceta(insumosParaCosto);
 
+    const costoStaff = evento.turnos.reduce(
+      (acumulado, turno) => acumulado + (Number(turno.costo) || 0),
+      0,
+    );
+
     precioTotalElegibles += precioTotal;
-    costoRealElegibles += costoTotal;
+    costoRealElegibles += costoTotal + costoStaff;
     huboElegibles = true;
   }
 
