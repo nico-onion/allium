@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPersona, getEventosDePersona } from "@/lib/staff/queries";
+import { getHistorialMarcaciones } from "@/lib/marcaciones/queries";
 import { ROL_LABELS } from "@/lib/staff/constants";
 import { ESTADO_BADGE_CLASSES, ESTADO_LABELS } from "@/lib/eventos/constants";
 import { formatFecha, formatGuaranies } from "@/lib/format";
+import { HistorialMarcacionesTable } from "@/components/marcaciones/HistorialMarcacionesTable";
 
 export default async function PersonalDetallePage({
   params,
@@ -17,7 +19,10 @@ export default async function PersonalDetallePage({
 
   if (!persona) notFound();
 
-  const turnos = await getEventosDePersona(supabase, id);
+  const [turnos, marcaciones] = await Promise.all([
+    getEventosDePersona(supabase, id),
+    getHistorialMarcaciones(supabase, id),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 py-4">
@@ -88,6 +93,11 @@ export default async function PersonalDetallePage({
             )}
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-zinc-600">Marcaciones</span>
+        <HistorialMarcacionesTable marcaciones={marcaciones} mostrarIndicadores />
       </div>
     </div>
   );

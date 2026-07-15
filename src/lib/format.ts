@@ -36,3 +36,10 @@ export function formatFechaCorta(fecha: string): string {
 export function formatCantidad(n: number): string {
   return Number(n.toFixed(2)).toString();
 }
+
+export function formatHora(iso: string): string {
+  return new Intl.DateTimeFormat("es-PY", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}

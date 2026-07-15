@@ -38,6 +38,8 @@ export type PresupuestoEstado =
   | "en_evaluacion"
   | "rechazado";
 
+export type MarcacionTipo = "entrada" | "salida";
+
 export interface Database {
   public: {
     Tables: {
@@ -788,6 +790,47 @@ export interface Database {
           created_at?: string;
         };
         Relationships: [];
+      };
+      marcaciones: {
+        Row: {
+          id: string;
+          personal_id: string;
+          tipo: MarcacionTipo;
+          marcado_en: string;
+          latitud: number | null;
+          longitud: number | null;
+          foto_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          personal_id: string;
+          tipo: MarcacionTipo;
+          marcado_en?: string;
+          latitud?: number | null;
+          longitud?: number | null;
+          foto_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          personal_id?: string;
+          tipo?: MarcacionTipo;
+          marcado_en?: string;
+          latitud?: number | null;
+          longitud?: number | null;
+          foto_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "marcaciones_personal_id_fkey";
+            columns: ["personal_id"];
+            isOneToOne: false;
+            referencedRelation: "personal";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;
