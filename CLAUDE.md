@@ -1,14 +1,15 @@
 @AGENTS.md
 
-# ERP Allium
+# Allium
 
 ## Qué es esto
 
 ERP interno para **Onion**, empresa de catering y organización de eventos que
 opera bajo la razón social **Allium E.A.S.** en Paraguay. Onion es la unidad
-de negocio activa hoy; el proyecto se llama "ERP Allium" porque la estructura
-debe permitir sumar otras unidades de Allium en el futuro (multi-empresa /
-multi-unidad), aunque hoy solo se construye y usa lo necesario para Onion.
+de negocio activa hoy; el sistema se llama "Allium" (sin el prefijo "ERP" en
+el nombre visible) porque la estructura debe permitir sumar otras unidades de
+Allium en el futuro (multi-empresa / multi-unidad), aunque hoy solo se
+construye y usa lo necesario para Onion.
 
 Identidad de marca: paleta fucsia / bordó. Tipografías: Inter para texto de
 cuerpo y Hanken Grotesk para títulos (HK Guise, la tipografía de marca, es

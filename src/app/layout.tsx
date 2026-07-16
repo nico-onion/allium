@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ERP Allium",
+  title: "Allium",
   description: "ERP interno de Onion (Allium E.A.S.)",
 };
 

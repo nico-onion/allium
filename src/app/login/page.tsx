@@ -30,7 +30,7 @@ export default function LoginPage() {
             Allium E.A.S.
           </span>
           <h1 className="mt-3 font-display text-3xl font-semibold text-white">
-            ERP Allium
+            Allium
           </h1>
         </div>
 

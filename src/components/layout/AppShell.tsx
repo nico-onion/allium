@@ -111,7 +111,7 @@ export function AppShell({
             <IconoMenu abierto={false} />
           </button>
           <Link href="/" className="font-display text-lg font-semibold text-bordo-600">
-            ERP Allium
+            Allium
           </Link>
         </div>
         <div className="flex items-center gap-4">

@@ -13,8 +13,8 @@ export type EnviarOrdenFormState = { error?: string; enviado?: boolean };
 
 // Remitente de prueba de Resend (resend.dev), válido sin verificar dominio
 // propio. Cuando se verifique onion.com.py en Resend, cambiar por algo como
-// "ERP Allium <compras@onion.com.py>".
-const REMITENTE = "ERP Allium <onboarding@resend.dev>";
+// "Allium <compras@onion.com.py>".
+const REMITENTE = "Allium <onboarding@resend.dev>";
 
 export async function enviarOrdenCompraPorEmail(
   eventoId: string,
