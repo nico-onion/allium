@@ -4,25 +4,72 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import type { MarcarFormState } from "@/app/(app)/marcar/actions";
 import type { MarcacionTipo } from "@/lib/supabase/database.types";
 
-type Paso = "idle" | "ubicacion" | "foto" | "guardando";
+type Paso = "idle" | "foto" | "procesando" | "guardando";
 
 const PASO_LABELS: Record<Paso, string> = {
   idle: "",
-  ubicacion: "Obteniendo ubicación...",
   foto: "Abriendo cámara...",
+  procesando: "Preparando...",
   guardando: "Guardando...",
 };
 
+// Una foto de verificación de asistencia no necesita la resolución
+// completa de la cámara del celular (que puede pesar varios MB, sobre
+// todo en HEIC/RAW) — la redimensionamos y recomprimimos del lado del
+// cliente antes de subir, tanto para que sea más rápido como para no
+// depender del límite de tamaño del servidor.
+const MAX_ANCHO_FOTO = 1280;
+const CALIDAD_JPEG = 0.75;
+
 // Debe quedar por debajo de experimental.serverActions.bodySizeLimit en
-// next.config.ts (15mb) — chequeo del lado del cliente para mostrar un
-// error claro al toque en vez de que el servidor rechace el request en
-// silencio (eso es justamente lo que dejaba el botón "colgado" antes).
+// next.config.ts (15mb) — con la compresión de arriba esto casi nunca se
+// alcanza, pero queda como red de seguridad por si la compresión falla y
+// se sube el archivo original sin tocar.
 const LIMITE_FOTO_BYTES = 12 * 1024 * 1024;
 
 // Salvavidas: si por lo que sea el estado de la Server Action nunca
 // vuelve (ej. problema de red a mitad de la subida), no dejar el botón
 // colgado en "Guardando..." para siempre.
 const TIMEOUT_GUARDADO_MS = 25000;
+
+// Redimensiona a un ancho máximo y recomprime a JPEG. Si el navegador no
+// puede decodificar el formato original (raro) devuelve el archivo tal
+// cual — mejor subir sin comprimir que no subir nada.
+async function comprimirFoto(archivo: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(archivo);
+    const escala = Math.min(1, MAX_ANCHO_FOTO / bitmap.width);
+    const ancho = Math.round(bitmap.width * escala);
+    const alto = Math.round(bitmap.height * escala);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = ancho;
+    canvas.height = alto;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return archivo;
+
+    ctx.drawImage(bitmap, 0, 0, ancho, alto);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", CALIDAD_JPEG),
+    );
+    if (!blob) return archivo;
+
+    return new File([blob], "marcacion.jpg", { type: "image/jpeg" });
+  } catch {
+    return archivo;
+  }
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden="true"
+      className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"
+    />
+  );
+}
 
 export function MarcarForm({
   siguienteTipo,
@@ -48,6 +95,8 @@ export function MarcarForm({
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
   const procesando = paso !== "idle" || isPending;
+  const etiquetaBoton =
+    isPending && paso === "idle" ? PASO_LABELS.guardando : PASO_LABELS[paso];
 
   // Salvavidas: si la Server Action nunca resuelve (ej. problema de red a
   // mitad de la subida), no dejar el botón colgado en "Guardando..." sin
@@ -132,24 +181,38 @@ export function MarcarForm({
     // input.click() tiene que ser la primera acción síncrona de este
     // handler, sin ningún await antes: iOS Safari bloquea en silencio la
     // apertura de la cámara si no ocurre dentro del mismo gesto de click
-    // del usuario. Por eso la ubicación se pide DESPUÉS de la foto, no
-    // antes (esperarFoto() dispara el click de forma síncrona porque el
-    // executor de `new Promise` corre sincrónicamente).
+    // del usuario. Por eso todo lo demás (ubicación, compresión) se pide
+    // DESPUÉS de la foto, no antes (esperarFoto() dispara el click de
+    // forma síncrona porque el executor de `new Promise` corre
+    // sincrónicamente).
     setPaso("foto");
 
     try {
       await esperarFoto();
 
-      const archivo = fotoInputRef.current?.files?.[0];
-      if (archivo && archivo.size > LIMITE_FOTO_BYTES) {
-        setErrorLocal(
-          `La foto pesa ${(archivo.size / (1024 * 1024)).toFixed(1)}MB, demasiado para subir. Probá sacarla de nuevo (a veces ayuda bajar la resolución de la cámara en Ajustes).`,
-        );
-        return;
-      }
+      const archivoOriginal = fotoInputRef.current?.files?.[0] ?? null;
 
-      setPaso("ubicacion");
-      const ubicacion = await obtenerUbicacion();
+      // Comprimir la foto y pedir la ubicación no dependen una de la otra
+      // — van en paralelo en vez de en serie para no sumar sus tiempos.
+      setPaso("procesando");
+      const [archivoComprimido, ubicacion] = await Promise.all([
+        archivoOriginal ? comprimirFoto(archivoOriginal) : Promise.resolve(null),
+        obtenerUbicacion(),
+      ]);
+
+      if (archivoComprimido && fotoInputRef.current) {
+        if (archivoComprimido.size > LIMITE_FOTO_BYTES) {
+          setErrorLocal(
+            `La foto pesa ${(archivoComprimido.size / (1024 * 1024)).toFixed(1)}MB, demasiado para subir. Probá sacarla de nuevo.`,
+          );
+          return;
+        }
+        // Reemplaza el archivo del input por la versión comprimida, así
+        // el <form> sube esa en vez de la original de la cámara.
+        const dt = new DataTransfer();
+        dt.items.add(archivoComprimido);
+        fotoInputRef.current.files = dt.files;
+      }
 
       if (ubicacion) {
         if (latRef.current) latRef.current.value = ubicacion.lat;
@@ -191,15 +254,18 @@ export function MarcarForm({
         type="button"
         onClick={iniciarMarcacion}
         disabled={procesando}
-        className="w-full rounded-xl bg-fucsia-600 py-6 text-lg font-semibold text-white disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-3 rounded-xl bg-fucsia-600 py-6 text-lg font-semibold text-white disabled:opacity-60"
       >
-        {procesando
-          ? isPending && paso === "idle"
-            ? PASO_LABELS.guardando
-            : PASO_LABELS[paso]
-          : siguienteTipo === "entrada"
-            ? "Marcar entrada"
-            : "Marcar salida"}
+        {procesando ? (
+          <>
+            <Spinner />
+            {etiquetaBoton}
+          </>
+        ) : siguienteTipo === "entrada" ? (
+          "Marcar entrada"
+        ) : (
+          "Marcar salida"
+        )}
       </button>
 
       {errorLocal && (
