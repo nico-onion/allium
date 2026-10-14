@@ -440,7 +440,10 @@ export async function crearEventoDesdePresupuesto(presupuestoId: string) {
       cliente_id: presupuesto.cliente_id,
       nombre: `${tipoLabel(presupuesto.tipo_evento)} — ${presupuesto.clientes?.nombre ?? "Evento"}`,
       tipo: presupuesto.tipo_evento,
-      fecha: presupuesto.fecha_evento,
+      // La cotización tiene solo el día: sin hora, Postgres lo toma como
+      // medianoche UTC, que en Paraguay es el día anterior. Se fija el
+      // mediodía de Asunción y la hora se ajusta después en el evento.
+      fecha: `${presupuesto.fecha_evento}T12:00:00-03:00`,
       invitados: presupuesto.cantidad_personas,
       estado: "confirmado",
       ubicacion: presupuesto.lugar_direccion,
