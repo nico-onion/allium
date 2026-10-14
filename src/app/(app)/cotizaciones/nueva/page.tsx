@@ -1,26 +1,32 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getClientesParaSelector, getRecetasParaSelector } from "@/lib/eventos/queries";
-import { getTiposEventoUsados } from "@/lib/cotizaciones/queries";
+import { getDatosFormularioPresupuesto } from "@/lib/cotizaciones/datos-formulario";
 import { PresupuestoForm } from "@/components/cotizaciones/PresupuestoForm";
 import { crearPresupuesto } from "../actions";
 
-export default async function NuevaCotizacionPage() {
+export default async function NuevaCotizacionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string }>;
+}) {
+  const { cliente } = await searchParams;
   const supabase = await createClient();
-  const [clientes, recetas, tiposUsados] = await Promise.all([
-    getClientesParaSelector(supabase),
-    getRecetasParaSelector(supabase),
-    getTiposEventoUsados(supabase),
-  ]);
+  const datos = await getDatosFormularioPresupuesto(supabase);
+  const clienteInicial = datos.clientes.some((c) => c.id === cliente) ? cliente : undefined;
 
   return (
     <div className="flex flex-1 flex-col">
-      <h1 className="px-4 pt-4 font-display text-xl font-semibold text-bordo-600">
-        Nueva cotización
-      </h1>
+      <div className="flex items-center justify-between gap-3 px-4 pt-4">
+        <h1 className="font-display text-xl font-semibold text-bordo-600">
+          Nueva cotización
+        </h1>
+        <Link href="/cotizaciones/margenes" className="text-sm text-fucsia-600">
+          Márgenes
+        </Link>
+      </div>
       <PresupuestoForm
-        clientes={clientes}
-        recetas={recetas}
-        tiposUsados={tiposUsados}
+        {...datos}
+        clienteInicial={clienteInicial}
         action={crearPresupuesto}
         submitLabel="Crear cotización"
       />

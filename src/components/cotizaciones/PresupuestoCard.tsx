@@ -11,6 +11,7 @@ export type PresupuestoParaLista = {
   fecha_evento: string | null;
   estado: PresupuestoEstado;
   total: number;
+  margenPct: number | null;
   clienteNombre: string | null;
 };
 
@@ -42,9 +43,12 @@ export function PresupuestoCard({
           {ESTADO_LABELS[presupuesto.estado]}
         </span>
       </div>
-      <span className="text-sm font-medium text-bordo-600">
-        {formatGuaranies(presupuesto.total)}
-      </span>
+      <div className="flex items-baseline justify-between text-sm">
+        <span className="font-medium text-bordo-600">{formatGuaranies(presupuesto.total)}</span>
+        {presupuesto.margenPct !== null && (
+          <span className="text-zinc-500">Margen {presupuesto.margenPct.toFixed(1)} %</span>
+        )}
+      </div>
     </Link>
   );
 }

@@ -9,7 +9,8 @@ import {
 } from "@/lib/cotizaciones/constants";
 import { calcularVencimiento } from "@/lib/cotizaciones/fecha";
 import { tipoLabel } from "@/lib/eventos/constants";
-import { formatFechaCorta, formatGuaranies } from "@/lib/format";
+import { formatFecha, formatFechaCorta, formatGuaranies } from "@/lib/format";
+import { calcularTotales, CATEGORIA_LABELS, margenPct } from "@/lib/cotizaciones/margen";
 import { EstadoPresupuestoSelector } from "@/components/cotizaciones/EstadoPresupuestoSelector";
 import { CrearEventoDesdePresupuestoForm } from "@/components/cotizaciones/CrearEventoDesdePresupuestoForm";
 import {
@@ -40,10 +41,18 @@ export default async function CotizacionDetallePage({
   if (!presupuesto) notFound();
 
   const items = await getPresupuestoItems(supabase, id);
-  const total = items.reduce(
-    (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
-    0,
+  const totales = calcularTotales(
+    items.map((item) => ({
+      cantidad: Number(item.cantidad),
+      precioUnitario: Number(item.precio_unitario),
+      costoUnitario: item.costo_unitario === null ? null : Number(item.costo_unitario),
+    })),
+    Number(presupuesto.pct_imprevistos),
+    presupuesto.cantidad_personas,
   );
+  const total = totales.precioTotal;
+  const margenObjetivo =
+    presupuesto.margen_objetivo_pct === null ? null : Number(presupuesto.margen_objetivo_pct);
 
   const vencimiento = calcularVencimiento(
     presupuesto.fecha_emision,
@@ -60,9 +69,13 @@ export default async function CotizacionDetallePage({
           <h1 className="font-display text-xl font-semibold text-bordo-600">
             Cotización N° {presupuesto.numero}
           </h1>
-          <span className="text-sm text-zinc-500">
-            {presupuesto.clientes?.nombre ?? "Sin cliente"}
-          </span>
+          {presupuesto.clientes ? (
+            <Link href={`/clientes/${presupuesto.clientes.id}`} className="text-sm text-fucsia-600">
+              {presupuesto.clientes.nombre}
+            </Link>
+          ) : (
+            <span className="text-sm text-zinc-500">Sin cliente</span>
+          )}
         </div>
         <span
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${ESTADO_BADGE_CLASSES[presupuesto.estado]}`}
@@ -91,22 +104,94 @@ export default async function CotizacionDetallePage({
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4">
-        <span className="text-sm font-medium text-zinc-600">Detalle de costos</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-zinc-600">Detalle de costos</span>
+          {presupuesto.costo_congelado_en && (
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+              Costo congelado {formatFecha(presupuesto.costo_congelado_en)}
+            </span>
+          )}
+        </div>
         <ul className="flex flex-col gap-2">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-2 text-sm last:border-0 last:pb-0"
-            >
-              <span className="text-zinc-900">
-                {item.recetas?.nombre ?? "Receta"} × {item.cantidad}
-              </span>
-              <span className="text-zinc-500">
-                {formatGuaranies(Number(item.cantidad) * Number(item.precio_unitario))}
-              </span>
-            </li>
-          ))}
+          {items.map((item) => {
+            const cantidad = Number(item.cantidad);
+            const precio = Number(item.precio_unitario);
+            const costo = item.costo_unitario === null ? null : Number(item.costo_unitario);
+            const margenLinea = costo !== null ? margenPct(precio, costo) : null;
+            return (
+              <li
+                key={item.id}
+                className="flex items-start justify-between gap-2 border-b border-zinc-100 pb-2 text-sm last:border-0 last:pb-0"
+              >
+                <span className="flex flex-col">
+                  <span className="text-zinc-900">
+                    {item.recetas?.nombre ?? item.descripcion ?? "Ítem"} × {cantidad}
+                  </span>
+                  <span className="text-xs text-zinc-400">
+                    {item.receta_id ? "Receta" : CATEGORIA_LABELS[item.categoria]} · costo{" "}
+                    {costo === null ? "sin cargar" : formatGuaranies(costo * cantidad)}
+                  </span>
+                </span>
+                <span className="flex flex-col items-end">
+                  <span className="text-zinc-700">{formatGuaranies(cantidad * precio)}</span>
+                  {margenLinea !== null && (
+                    <span
+                      className={`text-xs ${
+                        margenObjetivo !== null && margenLinea < margenObjetivo
+                          ? "text-amber-700"
+                          : "text-emerald-700"
+                      }`}
+                    >
+                      margen {margenLinea.toFixed(1)} %
+                    </span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
         </ul>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-white p-4">
+        <Campo label="Total a cobrar" value={formatGuaranies(totales.precioTotal)} />
+        <Campo label="Sin IVA" value={formatGuaranies(totales.precioSinIva)} />
+        <Campo
+          label={
+            Number(presupuesto.pct_imprevistos) > 0
+              ? `Costo (+${Number(presupuesto.pct_imprevistos)} % imprev.)`
+              : "Costo"
+          }
+          value={formatGuaranies(totales.costoTotal)}
+        />
+        <Campo
+          label={margenObjetivo !== null ? `Margen (objetivo ${margenObjetivo} %)` : "Margen"}
+          value={
+            <span
+              className={
+                margenObjetivo !== null &&
+                totales.margenPct !== null &&
+                totales.margenPct < margenObjetivo
+                  ? "text-amber-700"
+                  : "text-emerald-700"
+              }
+            >
+              {formatGuaranies(totales.margenBruto)}
+              {totales.margenPct !== null && ` · ${totales.margenPct.toFixed(1)} %`}
+            </span>
+          }
+        />
+        {totales.costoPorInvitado !== null && (
+          <Campo
+            label="Por invitado"
+            value={`${formatGuaranies(totales.precioPorInvitado)} (costo ${formatGuaranies(totales.costoPorInvitado)})`}
+          />
+        )}
+        {totales.lineasSinCosto > 0 && (
+          <p className="col-span-2 text-xs text-amber-600">
+            {totales.lineasSinCosto} línea(s) sin costo cargado: el margen real va a ser menor.
+            Editá y guardá el presupuesto para costearlas.
+          </p>
+        )}
       </div>
 
       {presupuesto.incluye && (
