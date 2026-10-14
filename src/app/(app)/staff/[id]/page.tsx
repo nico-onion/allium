@@ -33,10 +33,19 @@ export default async function PersonalDetallePage({
         <span className="text-sm text-zinc-500">{ROL_LABELS[persona.rol]}</span>
       </div>
 
-      {persona.telefono && (
-        <p className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
-          {persona.telefono}
-        </p>
+      {(persona.telefono || persona.costo_referencia !== null) && (
+        <div className="flex flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
+          {persona.telefono && <span>{persona.telefono}</span>}
+          {persona.costo_referencia !== null && (
+            <span>
+              Costo de referencia:{" "}
+              <strong className="text-zinc-900">
+                {formatGuaranies(Number(persona.costo_referencia))}
+              </strong>{" "}
+              por evento
+            </span>
+          )}
+        </div>
       )}
 
       <Link
@@ -86,6 +95,13 @@ export default async function PersonalDetallePage({
                     </span>
                     <span className="text-zinc-500">
                       {formatGuaranies(turno.costo)}
+                      {turno.costo_referencia !== null &&
+                        turno.costo !== null &&
+                        Number(turno.costo) !== Number(turno.costo_referencia) && (
+                          <span className="ml-1 text-xs text-zinc-400">
+                            (ref. {formatGuaranies(Number(turno.costo_referencia))})
+                          </span>
+                        )}
                     </span>
                   </div>
                 </Link>

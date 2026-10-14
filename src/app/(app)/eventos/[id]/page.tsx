@@ -46,6 +46,7 @@ import {
 } from "../menu-actions";
 import {
   asignarPersonalAEvento,
+  actualizarCostoTurno,
   eliminarTurno,
   toggleConfirmadoTurno,
 } from "../turnos-actions";
@@ -306,6 +307,7 @@ export default async function EventoDetallePage({
           turnos={turnos}
           toggleConfirmadoAction={toggleConfirmadoTurno.bind(null, evento.id)}
           eliminarAction={eliminarTurno.bind(null, evento.id)}
+          actualizarCostoAction={actualizarCostoTurno.bind(null, evento.id)}
         />
 
         <AsignarStaffForm
