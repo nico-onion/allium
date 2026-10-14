@@ -27,16 +27,24 @@ export default async function DashboardPage({
   const supabase = await createClient();
 
   const ahora = new Date();
-  const mesActual = { year: ahora.getFullYear(), month: ahora.getMonth() };
-  const mesSeleccionado = parseMesParam(mesParam, ahora);
+  // "hoy" en Paraguay (el servidor corre en UTC)
+  const ahoraPy = new Date(ahora.getTime() - 3 * 3600 * 1000);
+  const mesActual = { year: ahoraPy.getUTCFullYear(), month: ahoraPy.getUTCMonth() };
+  const mesSeleccionado = parseMesParam(mesParam, ahoraPy);
 
-  const inicioMes = new Date(mesSeleccionado.year, mesSeleccionado.month, 1);
-  const finMes = new Date(mesSeleccionado.year, mesSeleccionado.month + 1, 1);
+  // Límites del mes en hora de Paraguay (UTC−3 todo el año): el servidor
+  // corre en UTC y sin esto el mes arrancaría el día anterior a las 21:00.
+  const limite = (year: number, month: number) => {
+    const fecha = new Date(Date.UTC(year, month, 1));
+    return `${fecha.toISOString().slice(0, 10)}T00:00:00-03:00`;
+  };
+  const inicioMes = limite(mesSeleccionado.year, mesSeleccionado.month);
+  const finMes = limite(mesSeleccionado.year, mesSeleccionado.month + 1);
 
   const [resumenMes, metricasFinancieras, proximoEvento, insumos, cantidadDiscrepancias] =
     await Promise.all([
-      getResumenMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
-      getMetricasFinancierasMes(supabase, inicioMes.toISOString(), finMes.toISOString()),
+      getResumenMes(supabase, inicioMes, finMes),
+      getMetricasFinancierasMes(supabase, inicioMes, finMes),
       getProximoEvento(supabase, ahora.toISOString()),
       getInsumos(supabase),
       getCantidadDiscrepancias(supabase),
@@ -88,10 +96,16 @@ export default async function DashboardPage({
           <div className="rounded-xl border border-zinc-200 bg-white p-4">
             <span className="block text-2xl font-semibold text-bordo-600">
               {metricasFinancieras.margenPromedio !== null
-                ? `${Math.round(metricasFinancieras.margenPromedio * 100)}%`
+                ? `${(metricasFinancieras.margenPromedio * 100).toFixed(1)} %`
                 : "Sin datos"}
             </span>
-            <span className="text-sm text-zinc-500">Margen promedio</span>
+            <span className="text-sm text-zinc-500">Margen real</span>
+            {metricasFinancieras.eventosConMargen > 0 && (
+              <span className="block text-xs text-zinc-400">
+                sin IVA · {metricasFinancieras.eventosConMargen} evento
+                {metricasFinancieras.eventosConMargen === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
         </div>
 
