@@ -5,12 +5,12 @@ import { getCompra } from "@/lib/compras/queries";
 import { getEventosParaSelector } from "@/lib/eventos/queries";
 import { GASTO_CATEGORIA_LABELS } from "@/lib/compras/constants";
 import { categoriaGastoValida } from "@/lib/compras/registrar";
-import { TASA_IVA_LABELS, liquidacionIva, tasaIvaValida } from "@/lib/compras/iva";
+import { TASAS_IVA, TASA_IVA_LABELS, liquidacionIva, tasaIvaValida } from "@/lib/compras/iva";
 import { UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { formatCantidad, formatFechaCorta, formatGuaranies } from "@/lib/format";
 import { ItemsCompraTable } from "@/components/compras/ItemsCompraTable";
 import { RevisionCompraForm } from "@/components/compras/RevisionCompraForm";
-import { descartarBorrador, resolverYConfirmarCompra } from "../revision-actions";
+import { actualizarIvaCompra, descartarBorrador, resolverYConfirmarCompra } from "../revision-actions";
 
 export default async function CompraDetallePage({
   params,
@@ -91,26 +91,47 @@ export default async function CompraDetallePage({
       ) : (
         <>
           {compra.lineas.length > 0 && (
-            <ul className="flex flex-col rounded-xl border border-zinc-200 bg-white text-sm">
-              {compra.lineas.map((linea) => (
-                <li
-                  key={linea.id}
-                  className="flex items-start justify-between gap-2 border-b border-zinc-100 px-4 py-2 last:border-0"
-                >
-                  <span className="flex flex-col">
-                    <span className="text-zinc-900">{linea.descripcion}</span>
-                    <span className="text-xs text-zinc-400">
-                      {formatCantidad(linea.cantidad)} {UNIDAD_LABELS_CORTAS[linea.unidad]} ·{" "}
-                      {linea.destino === "gasto"
-                        ? `gasto: ${GASTO_CATEGORIA_LABELS[categoriaGastoValida(linea.categoria_gasto)]}`
-                        : `insumo: ${linea.insumos?.nombre ?? "-"}`}
-                      {` · IVA ${TASA_IVA_LABELS[tasaIvaValida(linea.tasa_iva)]}`}
+            <form action={actualizarIvaCompra.bind(null, compra.id)} className="flex flex-col gap-2">
+              <ul className="flex flex-col rounded-xl border border-zinc-200 bg-white text-sm">
+                {compra.lineas.map((linea) => (
+                  <li
+                    key={linea.id}
+                    className="flex items-start justify-between gap-2 border-b border-zinc-100 px-4 py-2 last:border-0"
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-zinc-900">{linea.descripcion}</span>
+                      <span className="text-xs text-zinc-400">
+                        {formatCantidad(linea.cantidad)} {UNIDAD_LABELS_CORTAS[linea.unidad]} ·{" "}
+                        {linea.destino === "gasto"
+                          ? `gasto: ${GASTO_CATEGORIA_LABELS[categoriaGastoValida(linea.categoria_gasto)]}`
+                          : `insumo: ${linea.insumos?.nombre ?? "-"}`}
+                      </span>
                     </span>
-                  </span>
-                  <span className="text-zinc-700">{formatGuaranies(linea.subtotal)}</span>
-                </li>
-              ))}
-            </ul>
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-zinc-700">{formatGuaranies(linea.subtotal)}</span>
+                      <select
+                        name={`iva_${linea.id}`}
+                        defaultValue={tasaIvaValida(linea.tasa_iva)}
+                        aria-label="Tasa de IVA"
+                        className="rounded-md border border-zinc-200 bg-white px-1 py-0.5 text-xs text-zinc-600"
+                      >
+                        {TASAS_IVA.map((tasa) => (
+                          <option key={tasa} value={tasa}>
+                            IVA {TASA_IVA_LABELS[tasa]}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="submit"
+                className="self-end rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600"
+              >
+                Guardar IVA
+              </button>
+            </form>
           )}
           {compra.lineas.length > 0 && (
             <div className="grid grid-cols-3 gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
