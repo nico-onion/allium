@@ -6,6 +6,7 @@ import { UNIDAD_LABELS_CORTAS, UNIDAD_OPTIONS } from "@/lib/insumos/constants";
 import { GASTO_CATEGORIA_LABELS, GASTO_CATEGORIAS } from "@/lib/compras/constants";
 import { mismaDimension } from "@/lib/recetas/costo";
 import { formatCantidad, formatGuaranies } from "@/lib/format";
+import { TASAS_IVA, TASA_IVA_LABELS, tasaIvaValida } from "@/lib/compras/iva";
 import type { RevisionCompraState } from "@/app/(app)/compras/revision-actions";
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
@@ -15,6 +16,7 @@ type Linea = {
   cantidad: number;
   unidad: InsumoUnidad;
   subtotal: number;
+  tasa_iva: number;
   destino: "insumo" | "gasto" | null;
   insumo_id: string | null;
   factor: number | null;
@@ -81,12 +83,26 @@ function FilaLinea({
             {formatGuaranies(linea.subtotal)}
           </span>
         </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+        <select
+          name={`iva_${linea.id}`}
+          defaultValue={tasaIvaValida(linea.tasa_iva)}
+          aria-label="Tasa de IVA"
+          className="rounded-md border border-zinc-200 bg-white px-1 py-0.5 text-xs text-zinc-600"
+        >
+          {TASAS_IVA.map((tasa) => (
+            <option key={tasa} value={tasa}>
+              IVA {TASA_IVA_LABELS[tasa]}
+            </option>
+          ))}
+        </select>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
             reconocida ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"
           }`}
         >
           {reconocida ? "Reconocido" : "Nuevo"}
+        </span>
         </span>
       </div>
 

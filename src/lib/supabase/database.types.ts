@@ -1169,6 +1169,7 @@ export interface Database {
           destino: CompraLineaDestino | null;
           insumo_id: string | null;
           factor: number | null;
+          tasa_iva: number;
           categoria_gasto: string | null;
           created_at: string;
         };
@@ -1184,6 +1185,7 @@ export interface Database {
           destino?: CompraLineaDestino | null;
           insumo_id?: string | null;
           factor?: number | null;
+          tasa_iva?: number;
           categoria_gasto?: string | null;
           created_at?: string;
         };
@@ -1199,6 +1201,7 @@ export interface Database {
           destino?: CompraLineaDestino | null;
           insumo_id?: string | null;
           factor?: number | null;
+          tasa_iva?: number;
           categoria_gasto?: string | null;
           created_at?: string;
         };

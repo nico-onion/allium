@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { crearCompraBorrador, type LineaFactura } from "@/lib/compras/borrador";
+import { tasaIvaValida } from "@/lib/compras/iva";
 import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
 
 export type CompraFormState = { error?: string };
@@ -57,6 +58,7 @@ function parseLineas(formData: FormData): LineaFactura[] {
   const cantidades = formData.getAll("linea_cantidad");
   const unidades = formData.getAll("linea_unidad") as string[];
   const subtotales = formData.getAll("linea_subtotal");
+  const tasas = formData.getAll("linea_iva");
 
   return descripciones
     .map((descripcion, i) => ({
@@ -64,6 +66,7 @@ function parseLineas(formData: FormData): LineaFactura[] {
       cantidad: leerNumero(cantidades[i]),
       unidad: (UNIDADES.includes(unidades[i] as InsumoUnidad) ? unidades[i] : "unidad") as InsumoUnidad,
       subtotal: leerNumero(subtotales[i]),
+      tasaIva: tasaIvaValida(tasas[i]),
     }))
     .filter((linea) => linea.descripcion || linea.subtotal > 0);
 }

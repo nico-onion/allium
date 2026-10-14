@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { claveProveedor, normalizarDescripcion } from "@/lib/compras/normalizar";
+import { tasaIvaValida } from "@/lib/compras/iva";
 import { categoriaGastoValida, confirmarCompra } from "@/lib/compras/registrar";
 import { mismaDimension } from "@/lib/recetas/costo";
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
@@ -122,7 +123,7 @@ export async function resolverYConfirmarCompra(
 
     const { error: lineaError } = await supabase
       .from("compra_lineas")
-      .update(cambios)
+      .update({ ...cambios, tasa_iva: tasaIvaValida(formData.get(`iva_${linea.id}`)) })
       .eq("id", linea.id);
     if (lineaError) return { error: lineaError.message };
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CompraOrigen, Database, InsumoUnidad } from "@/lib/supabase/database.types";
 import { claveProveedor, normalizarDescripcion } from "@/lib/compras/normalizar";
+import type { TasaIva } from "@/lib/compras/iva";
 
 type Supabase = SupabaseClient<Database>;
 
@@ -9,6 +10,7 @@ export type LineaFactura = {
   cantidad: number;
   unidad: InsumoUnidad;
   subtotal: number;
+  tasaIva: TasaIva;
 };
 
 export type DatosFactura = {
@@ -103,6 +105,7 @@ export async function crearCompraBorrador(
       cantidad: linea.cantidad,
       unidad: linea.unidad,
       subtotal: linea.subtotal,
+      tasa_iva: linea.tasaIva,
       precio_unitario: Math.round((linea.subtotal / linea.cantidad) * 100) / 100,
       destino: conocido?.destino ?? null,
       insumo_id: conocido?.insumo_id ?? null,
