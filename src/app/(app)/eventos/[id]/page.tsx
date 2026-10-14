@@ -5,11 +5,12 @@ import {
   getEvento,
   getMenuDeEvento,
   getMenuItems,
-  getRecetaInsumosDeRecetas,
   getRecetasParaSelector,
 } from "@/lib/eventos/queries";
 import { getInsumosParaSelector } from "@/lib/insumos/queries";
 import { calcularPackingList } from "@/lib/eventos/packing-list";
+import { getRecetasParaCosto } from "@/lib/recetas/queries";
+import { armarMapaRecetas } from "@/lib/recetas/costo";
 import { getOrdenCompra } from "@/lib/ordenes-compra/queries";
 import { getPersonalParaSelector, getTurnosDeEvento } from "@/lib/staff/queries";
 import {
@@ -78,13 +79,10 @@ export default async function EventoDetallePage({
 
   const menu = await getMenuDeEvento(supabase, evento.id);
   const menuItems = menu ? await getMenuItems(supabase, menu.id) : [];
-  const recetaInsumos = menu
-    ? await getRecetaInsumosDeRecetas(
-        supabase,
-        [...new Set(menuItems.map((item) => item.receta_id))],
-      )
-    : [];
-  const packingList = calcularPackingList(menuItems, recetaInsumos);
+  const mapaRecetas = menu
+    ? armarMapaRecetas(await getRecetasParaCosto(supabase))
+    : armarMapaRecetas([]);
+  const packingList = calcularPackingList(menuItems, mapaRecetas);
   const ordenCompra = await getOrdenCompra(supabase, evento.id);
 
   const [recetas, insumos, turnos, personalParaSelector] = await Promise.all([

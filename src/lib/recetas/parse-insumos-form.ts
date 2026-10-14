@@ -27,3 +27,29 @@ export function tieneInsumosDuplicados(filas: FilaInsumo[]): boolean {
   const ids = filas.map((fila) => fila.insumo_id);
   return new Set(ids).size !== ids.length;
 }
+
+export type FilaSubreceta = {
+  subreceta_id: string;
+  cantidad: number;
+  unidad: InsumoUnidad;
+};
+
+// Mismo criterio que los insumos, con sus propios nombres de campo.
+export function parseFilasSubrecetas(formData: FormData): FilaSubreceta[] {
+  const ids = formData.getAll("subreceta_id") as string[];
+  const cantidades = formData.getAll("subreceta_cantidad") as string[];
+  const unidades = formData.getAll("subreceta_unidad") as InsumoUnidad[];
+
+  return ids
+    .map((subreceta_id, i) => ({
+      subreceta_id,
+      cantidad: Number(cantidades[i]),
+      unidad: unidades[i],
+    }))
+    .filter((fila) => fila.subreceta_id && fila.cantidad > 0 && fila.unidad);
+}
+
+export function tieneSubrecetasDuplicadas(filas: FilaSubreceta[]): boolean {
+  const ids = filas.map((fila) => fila.subreceta_id);
+  return new Set(ids).size !== ids.length;
+}

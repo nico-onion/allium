@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { getInsumosParaSelector } from "@/lib/insumos/queries";
+import { getRecetasParaCosto, getSubrecetasParaSelector } from "@/lib/recetas/queries";
 import { RecetaForm } from "@/components/recetas/RecetaForm";
 import { crearReceta } from "../actions";
 
 export default async function NuevaRecetaPage() {
   const supabase = await createClient();
-  const insumos = await getInsumosParaSelector(supabase);
+  const [insumos, subrecetas, recetasParaCosto] = await Promise.all([
+    getInsumosParaSelector(supabase),
+    getSubrecetasParaSelector(supabase),
+    getRecetasParaCosto(supabase),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -14,6 +19,8 @@ export default async function NuevaRecetaPage() {
       </h1>
       <RecetaForm
         insumos={insumos}
+        subrecetas={subrecetas}
+        recetasParaCosto={recetasParaCosto}
         action={crearReceta}
         submitLabel="Crear receta"
       />

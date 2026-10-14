@@ -1,11 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
-import {
-  getMenuDeEvento,
-  getMenuItems,
-  getRecetaInsumosDeRecetas,
-} from "@/lib/eventos/queries";
+import { getMenuDeEvento, getMenuItems } from "@/lib/eventos/queries";
 import { calcularPackingList } from "@/lib/eventos/packing-list";
+import { getRecetasParaCosto } from "@/lib/recetas/queries";
+import { armarMapaRecetas } from "@/lib/recetas/costo";
 
 export type GenerarOrdenResultado = { error?: string };
 
@@ -27,9 +25,8 @@ export async function generarOrdenCompra(
     return { error: "El menú todavía no tiene recetas cargadas." };
   }
 
-  const recetaIds = [...new Set(items.map((item) => item.receta_id))];
-  const recetaInsumos = await getRecetaInsumosDeRecetas(supabase, recetaIds);
-  const packingList = calcularPackingList(items, recetaInsumos);
+  const mapaRecetas = armarMapaRecetas(await getRecetasParaCosto(supabase));
+  const packingList = calcularPackingList(items, mapaRecetas);
 
   if (packingList.length === 0) {
     return {

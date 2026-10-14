@@ -21,12 +21,20 @@ export default async function InsumosPage({
         <h1 className="font-display text-xl font-semibold text-bordo-600">
           Insumos
         </h1>
-        <Link
-          href="/insumos/nuevo"
-          className="shrink-0 rounded-lg bg-fucsia-600 px-4 py-2 text-sm font-medium text-white"
-        >
-          + Nuevo
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/insumos/cierre"
+            className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700"
+          >
+            Cierre mensual
+          </Link>
+          <Link
+            href="/insumos/nuevo"
+            className="rounded-lg bg-fucsia-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            + Nuevo
+          </Link>
+        </div>
       </div>
 
       <InsumosDashboard

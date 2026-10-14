@@ -94,21 +94,6 @@ export async function getMenuItems(
   return data;
 }
 
-export async function getRecetaInsumosDeRecetas(
-  supabase: SupabaseClient<Database>,
-  recetaIds: string[],
-) {
-  if (recetaIds.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("receta_insumos")
-    .select("receta_id, insumo_id, cantidad, unidad, insumos(nombre)")
-    .in("receta_id", recetaIds);
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 export async function getRecetasParaSelector(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("recetas")

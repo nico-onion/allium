@@ -40,6 +40,8 @@ export type PresupuestoEstado =
 
 export type MarcacionTipo = "entrada" | "salida";
 
+export type CostoHistorialOrigen = "compra" | "manual";
+
 export interface Database {
   public: {
     Tables: {
@@ -215,6 +217,10 @@ export interface Database {
           nombre: string;
           categoria: string | null;
           porcion_base: number;
+          es_subreceta: boolean;
+          rendimiento_unidad: InsumoUnidad | null;
+          pct_varios: number;
+          precio_venta: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -223,6 +229,10 @@ export interface Database {
           nombre: string;
           categoria?: string | null;
           porcion_base?: number;
+          es_subreceta?: boolean;
+          rendimiento_unidad?: InsumoUnidad | null;
+          pct_varios?: number;
+          precio_venta?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -231,6 +241,10 @@ export interface Database {
           nombre?: string;
           categoria?: string | null;
           porcion_base?: number;
+          es_subreceta?: boolean;
+          rendimiento_unidad?: InsumoUnidad | null;
+          pct_varios?: number;
+          precio_venta?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -289,6 +303,8 @@ export interface Database {
           unidad: InsumoUnidad;
           tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
           costo_unitario: number;
+          costo_contable: number;
+          merma_pct: number | null;
           stock_actual: number;
           stock_minimo: number;
           proveedor_id: string | null;
@@ -302,6 +318,8 @@ export interface Database {
           unidad: InsumoUnidad;
           tipo_almacenamiento?: InsumoTipoAlmacenamiento | null;
           costo_unitario?: number;
+          costo_contable?: number;
+          merma_pct?: number | null;
           stock_actual?: number;
           stock_minimo?: number;
           proveedor_id?: string | null;
@@ -315,6 +333,8 @@ export interface Database {
           unidad?: InsumoUnidad;
           tipo_almacenamiento?: InsumoTipoAlmacenamiento | null;
           costo_unitario?: number;
+          costo_contable?: number;
+          merma_pct?: number | null;
           stock_actual?: number;
           stock_minimo?: number;
           proveedor_id?: string | null;
@@ -832,9 +852,196 @@ export interface Database {
           },
         ];
       };
+      rendimientos: {
+        Row: {
+          id: string;
+          insumo_id: string;
+          fecha: string;
+          peso_inicial: number;
+          peso_perdida: number;
+          peso_aprovechado: number;
+          nota: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          insumo_id: string;
+          fecha?: string;
+          peso_inicial: number;
+          peso_perdida: number;
+          peso_aprovechado?: number;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          insumo_id?: string;
+          fecha?: string;
+          peso_inicial?: number;
+          peso_perdida?: number;
+          peso_aprovechado?: number;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rendimientos_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      receta_subrecetas: {
+        Row: {
+          id: string;
+          receta_id: string;
+          subreceta_id: string;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          receta_id: string;
+          subreceta_id: string;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          receta_id?: string;
+          subreceta_id?: string;
+          cantidad?: number;
+          unidad?: InsumoUnidad;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "receta_subrecetas_receta_id_fkey";
+            columns: ["receta_id"];
+            isOneToOne: false;
+            referencedRelation: "recetas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "receta_subrecetas_subreceta_id_fkey";
+            columns: ["subreceta_id"];
+            isOneToOne: false;
+            referencedRelation: "recetas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      costo_historial: {
+        Row: {
+          id: string;
+          insumo_id: string;
+          costo_anterior: number;
+          costo_nuevo: number;
+          origen: CostoHistorialOrigen;
+          compra_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          insumo_id: string;
+          costo_anterior: number;
+          costo_nuevo: number;
+          origen: CostoHistorialOrigen;
+          compra_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          insumo_id?: string;
+          costo_anterior?: number;
+          costo_nuevo?: number;
+          origen?: CostoHistorialOrigen;
+          compra_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "costo_historial_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "costo_historial_compra_id_fkey";
+            columns: ["compra_id"];
+            isOneToOne: false;
+            referencedRelation: "compras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cierres_mensuales: {
+        Row: {
+          id: string;
+          periodo: string;
+          cerrado_en: string;
+        };
+        Insert: {
+          id?: string;
+          periodo: string;
+          cerrado_en?: string;
+        };
+        Update: {
+          id?: string;
+          periodo?: string;
+          cerrado_en?: string;
+        };
+        Relationships: [];
+      };
+      cierre_insumos: {
+        Row: {
+          cierre_id: string;
+          insumo_id: string;
+          costo_contable: number;
+        };
+        Insert: {
+          cierre_id: string;
+          insumo_id: string;
+          costo_contable: number;
+        };
+        Update: {
+          cierre_id?: string;
+          insumo_id?: string;
+          costo_contable?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cierre_insumos_cierre_id_fkey";
+            columns: ["cierre_id"];
+            isOneToOne: false;
+            referencedRelation: "cierres_mensuales";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cierre_insumos_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      cerrar_mes_costos: {
+        Args: { p_periodo: string };
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

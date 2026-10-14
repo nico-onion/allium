@@ -5,7 +5,7 @@ export async function getInsumos(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("insumos")
     .select(
-      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, stock_actual, stock_minimo, proveedores(nombre)",
+      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, merma_pct, stock_actual, stock_minimo, proveedores(nombre)",
     )
     .order("nombre", { ascending: true });
 
@@ -17,7 +17,7 @@ export async function getInsumo(supabase: SupabaseClient<Database>, id: string) 
   const { data, error } = await supabase
     .from("insumos")
     .select(
-      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, stock_actual, stock_minimo, proveedor_id, proveedores(id, nombre)",
+      "id, nombre, categoria, unidad, tipo_almacenamiento, costo_unitario, costo_contable, merma_pct, stock_actual, stock_minimo, proveedor_id, proveedores(id, nombre)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -41,7 +41,7 @@ export async function getProveedoresParaSelector(
 export async function getInsumosParaSelector(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("insumos")
-    .select("id, nombre, unidad, costo_unitario")
+    .select("id, nombre, unidad, costo_unitario, merma_pct")
     .order("nombre", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -77,4 +77,34 @@ export async function getCantidadDiscrepancias(
 
   if (error) throw new Error(error.message);
   return count ?? 0;
+}
+
+export async function getRendimientos(
+  supabase: SupabaseClient<Database>,
+  insumoId: string,
+) {
+  const { data, error } = await supabase
+    .from("rendimientos")
+    .select("id, fecha, peso_inicial, peso_perdida, peso_aprovechado, nota")
+    .eq("insumo_id", insumoId)
+    .order("fecha", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getCostoHistorial(
+  supabase: SupabaseClient<Database>,
+  insumoId: string,
+) {
+  const { data, error } = await supabase
+    .from("costo_historial")
+    .select("id, costo_anterior, costo_nuevo, origen, compra_id, created_at")
+    .eq("insumo_id", insumoId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) throw new Error(error.message);
+  return data;
 }
