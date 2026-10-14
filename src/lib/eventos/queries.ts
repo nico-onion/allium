@@ -30,7 +30,7 @@ export async function getEvento(supabase: SupabaseClient<Database>, id: string) 
   const { data, error } = await supabase
     .from("eventos")
     .select(
-      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_por_persona, precio_total, margen_objetivo, link_cotizacion, cliente_id, clientes(id, nombre)",
+      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_por_persona, precio_total, margen_objetivo, costo_cotizado, link_cotizacion, cliente_id, clientes(id, nombre)",
     )
     .eq("id", id)
     .maybeSingle();

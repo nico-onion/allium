@@ -4,11 +4,32 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { tipoLabel } from "@/lib/eventos/constants";
 import { NO_INCLUYE_DEFAULT } from "@/lib/cotizaciones/constants";
-import { ItemsPresupuestoFields } from "@/components/cotizaciones/ItemsPresupuestoFields";
+import { calcularTotales, MARGEN_OBJETIVO_DEFAULT } from "@/lib/cotizaciones/margen";
+import { ORIGEN_LABELS } from "@/lib/clientes/constants";
+import { formatGuaranies } from "@/lib/format";
+import {
+  costoDeFila,
+  filaVacia,
+  ItemsPresupuestoFields,
+  type FilaPresupuesto,
+  type PersonalParaPresupuesto,
+  type RecetaParaPresupuesto,
+} from "@/components/cotizaciones/ItemsPresupuestoFields";
 import type { PresupuestoFormState } from "@/app/(app)/cotizaciones/actions";
+import type { PresupuestoItemCategoria } from "@/lib/supabase/database.types";
 
 type ClienteOption = { id: string; nombre: string };
-type RecetaOption = { id: string; nombre: string };
+type ParametrosTipo = { tipo: string; margen_objetivo_pct: number; pct_imprevistos: number };
+
+export type ItemInicial = {
+  receta_id: string | null;
+  descripcion: string | null;
+  categoria: PresupuestoItemCategoria;
+  personal_id: string | null;
+  cantidad: number;
+  precio_unitario: number;
+  costo_unitario: number | null;
+};
 
 const OTRO_TIPO = "__otro__";
 
@@ -23,7 +44,9 @@ export type PresupuestoFormValues = {
   cantidad_personas: number | null;
   incluye: string | null;
   no_incluye: string;
-  items: { receta_id: string; cantidad: number; precio_unitario: number }[];
+  margen_objetivo_pct: number | null;
+  pct_imprevistos: number;
+  items: ItemInicial[];
 };
 
 const inputClasses =
@@ -43,16 +66,41 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
+function filasDesdeItems(items: ItemInicial[] | undefined): FilaPresupuesto[] {
+  if (!items || items.length === 0) return [filaVacia(0, "receta")];
+  return items.map((item, i) => ({
+    key: i,
+    tipo: item.receta_id ? "receta" : "otro",
+    receta_id: item.receta_id ?? "",
+    descripcion: item.descripcion ?? "",
+    categoria: item.categoria,
+    personal_id: item.personal_id ?? "",
+    cantidad: String(item.cantidad),
+    precio_unitario: String(item.precio_unitario),
+    costo: !item.receta_id && item.costo_unitario !== null ? String(item.costo_unitario) : "",
+  }));
+}
+
 export function PresupuestoForm({
   clientes,
   recetas,
+  personal,
+  parametros,
+  costosCongelados,
   tiposUsados,
+  clienteInicial,
   defaultValues,
   action,
   submitLabel,
 }: {
+  // cliente preseleccionado al venir desde su ficha
+  clienteInicial?: string;
   clientes: ClienteOption[];
-  recetas: RecetaOption[];
+  recetas: RecetaParaPresupuesto[];
+  personal: PersonalParaPresupuesto[];
+  parametros: ParametrosTipo[];
+  // costo por receta de un presupuesto ya aceptado (se respeta al editar)
+  costosCongelados?: [string, number][];
   tiposUsados: string[];
   defaultValues?: PresupuestoFormValues;
   action: (
@@ -70,6 +118,46 @@ export function PresupuestoForm({
     defaultValues?.tipo_evento ?? "",
   );
   const esTipoOtro = tipoSeleccionado === OTRO_TIPO;
+
+  const parametrosPorTipo = new Map(parametros.map((p) => [p.tipo, p]));
+  const [margen, setMargen] = useState(
+    String(
+      defaultValues?.margen_objetivo_pct ??
+        parametrosPorTipo.get(defaultValues?.tipo_evento ?? "")?.margen_objetivo_pct ??
+        MARGEN_OBJETIVO_DEFAULT,
+    ),
+  );
+  const [imprevistos, setImprevistos] = useState(
+    String(defaultValues?.pct_imprevistos ?? 0),
+  );
+  const [invitados, setInvitados] = useState(
+    defaultValues?.cantidad_personas ? String(defaultValues.cantidad_personas) : "",
+  );
+  const [filas, setFilas] = useState<FilaPresupuesto[]>(() =>
+    filasDesdeItems(defaultValues?.items),
+  );
+
+  // Al elegir un tipo, se proponen su margen e imprevistos (editables).
+  function elegirTipo(tipo: string) {
+    setTipoSeleccionado(tipo);
+    const params = parametrosPorTipo.get(tipo);
+    setMargen(String(params?.margen_objetivo_pct ?? MARGEN_OBJETIVO_DEFAULT));
+    setImprevistos(String(params?.pct_imprevistos ?? 0));
+  }
+
+  const margenNumero = Math.min(99, Math.max(0, Number(margen) || 0));
+  const imprevistosNumero = Math.min(100, Math.max(0, Number(imprevistos) || 0));
+  const congelados = new Map(costosCongelados ?? []);
+  const recetasPorId = new Map(recetas.map((r) => [r.id, r]));
+  const totales = calcularTotales(
+    filas.map((fila) => ({
+      cantidad: Number(fila.cantidad) || 0,
+      precioUnitario: Number(fila.precio_unitario) || 0,
+      costoUnitario: costoDeFila(fila, recetasPorId, congelados),
+    })),
+    imprevistosNumero,
+    Number(invitados) || null,
+  );
 
   const hoy = new Date().toISOString().slice(0, 10);
 
@@ -106,7 +194,7 @@ export function PresupuestoForm({
         {modoCliente === "existente" ? (
           <select
             name="cliente_id"
-            defaultValue={defaultValues?.cliente_id ?? ""}
+            defaultValue={defaultValues?.cliente_id ?? clienteInicial ?? ""}
             required
             className={inputClasses}
           >
@@ -143,6 +231,20 @@ export function PresupuestoForm({
               placeholder="RUC o CI (opcional)"
               className={inputClasses}
             />
+            <div className="grid grid-cols-2 gap-2">
+              <select name="cliente_tipo" defaultValue="persona" className={inputClasses}>
+                <option value="persona">Persona</option>
+                <option value="empresa">Empresa</option>
+              </select>
+              <select name="cliente_origen" defaultValue="" className={inputClasses}>
+                <option value="">¿Cómo llegó?</option>
+                {Object.entries(ORIGEN_LABELS).map(([valor, label]) => (
+                  <option key={valor} value={valor}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>
@@ -185,7 +287,7 @@ export function PresupuestoForm({
           id="tipo_evento"
           name="tipo_evento_seleccionado"
           value={tipoSeleccionado}
-          onChange={(e) => setTipoSeleccionado(e.target.value)}
+          onChange={(e) => elegirTipo(e.target.value)}
           required
           className={inputClasses}
         >
@@ -258,14 +360,108 @@ export function PresupuestoForm({
             name="cantidad_personas"
             type="number"
             min={1}
-            defaultValue={defaultValues?.cantidad_personas ?? ""}
+            value={invitados}
+            onChange={(e) => setInvitados(e.target.value)}
             required
             className={inputClasses}
           />
         </div>
       </div>
 
-      <ItemsPresupuestoFields recetas={recetas} defaultItems={defaultValues?.items} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="margen_objetivo_pct" className={labelClasses}>
+            Margen objetivo (%)
+          </label>
+          <input
+            id="margen_objetivo_pct"
+            name="margen_objetivo_pct"
+            type="number"
+            min={0}
+            max={99}
+            step="any"
+            value={margen}
+            onChange={(e) => setMargen(e.target.value)}
+            className={inputClasses}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="pct_imprevistos" className={labelClasses}>
+            Imprevistos (%)
+          </label>
+          <input
+            id="pct_imprevistos"
+            name="pct_imprevistos"
+            type="number"
+            min={0}
+            max={100}
+            step="any"
+            value={imprevistos}
+            onChange={(e) => setImprevistos(e.target.value)}
+            className={inputClasses}
+          />
+        </div>
+      </div>
+      <span className="-mt-3 text-xs text-zinc-400">
+        Margen sobre el precio sin IVA. Imprevistos suma un colchón al costo; no se cobra
+        como línea aparte.
+      </span>
+
+      <ItemsPresupuestoFields
+        recetas={recetas}
+        personal={personal}
+        filas={filas}
+        setFilas={setFilas}
+        margenObjetivo={margenNumero}
+        pctImprevistos={imprevistosNumero}
+        congelados={congelados}
+      />
+
+      <div className="flex flex-col gap-1 rounded-lg bg-zinc-50 px-3 py-3 text-sm">
+        <div className="flex justify-between">
+          <span className="font-medium text-zinc-600">Total a cobrar</span>
+          <span className="font-display text-lg font-semibold text-bordo-600">
+            {formatGuaranies(totales.precioTotal)}
+          </span>
+        </div>
+        <div className="flex justify-between text-zinc-500">
+          <span>Sin IVA</span>
+          <span>{formatGuaranies(totales.precioSinIva)}</span>
+        </div>
+        <div className="flex justify-between text-zinc-500">
+          <span>
+            Costo{totales.costoImprevistos > 0 ? " (con imprevistos)" : ""}
+          </span>
+          <span>{formatGuaranies(totales.costoTotal)}</span>
+        </div>
+        <div className="flex justify-between font-medium">
+          <span className="text-zinc-600">Margen bruto</span>
+          <span
+            className={
+              totales.margenPct !== null && totales.margenPct < margenNumero
+                ? "text-amber-700"
+                : "text-emerald-700"
+            }
+          >
+            {formatGuaranies(totales.margenBruto)}
+            {totales.margenPct !== null && ` · ${totales.margenPct.toFixed(1)} %`}
+          </span>
+        </div>
+        {totales.costoPorInvitado !== null && (
+          <div className="flex justify-between text-zinc-500">
+            <span>Por invitado</span>
+            <span>
+              costo {formatGuaranies(totales.costoPorInvitado)} · precio{" "}
+              {formatGuaranies(totales.precioPorInvitado)}
+            </span>
+          </div>
+        )}
+        {totales.lineasSinCosto > 0 && (
+          <p className="text-xs text-amber-600">
+            {totales.lineasSinCosto} línea(s) sin costo: el margen real va a ser menor.
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="incluye" className={labelClasses}>

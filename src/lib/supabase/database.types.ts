@@ -42,6 +42,26 @@ export type MarcacionTipo = "entrada" | "salida";
 
 export type CostoHistorialOrigen = "compra" | "manual";
 
+export type ClienteTipo = "persona" | "empresa";
+
+export type ClienteOrigen =
+  | "instagram"
+  | "meta_ads"
+  | "whatsapp"
+  | "referido"
+  | "google"
+  | "evento"
+  | "otro";
+
+export type PresupuestoItemCategoria =
+  | "comida"
+  | "bebida"
+  | "personal"
+  | "alquiler"
+  | "logistica"
+  | "decoracion"
+  | "otro";
+
 export interface Database {
   public: {
     Tables: {
@@ -54,6 +74,8 @@ export interface Database {
           instagram: string | null;
           ruc_ci: string | null;
           notas: string | null;
+          tipo: ClienteTipo;
+          origen: ClienteOrigen | null;
           creado_en: string;
         };
         Insert: {
@@ -64,6 +86,8 @@ export interface Database {
           instagram?: string | null;
           ruc_ci?: string | null;
           notas?: string | null;
+          tipo?: ClienteTipo;
+          origen?: ClienteOrigen | null;
           creado_en?: string;
         };
         Update: {
@@ -74,6 +98,8 @@ export interface Database {
           instagram?: string | null;
           ruc_ci?: string | null;
           notas?: string | null;
+          tipo?: ClienteTipo;
+          origen?: ClienteOrigen | null;
           creado_en?: string;
         };
         Relationships: [];
@@ -92,6 +118,7 @@ export interface Database {
           precio_total: number | null;
           margen_objetivo: number | null;
           link_cotizacion: string | null;
+          costo_cotizado: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -108,6 +135,7 @@ export interface Database {
           precio_total?: number | null;
           margen_objetivo?: number | null;
           link_cotizacion?: string | null;
+          costo_cotizado?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -124,6 +152,7 @@ export interface Database {
           precio_total?: number | null;
           margen_objetivo?: number | null;
           link_cotizacion?: string | null;
+          costo_cotizado?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -704,6 +733,9 @@ export interface Database {
           no_incluye: string;
           estado: PresupuestoEstado;
           evento_id: string | null;
+          margen_objetivo_pct: number | null;
+          pct_imprevistos: number;
+          costo_congelado_en: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -722,6 +754,9 @@ export interface Database {
           no_incluye?: string;
           estado?: PresupuestoEstado;
           evento_id?: string | null;
+          margen_objetivo_pct?: number | null;
+          pct_imprevistos?: number;
+          costo_congelado_en?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -740,6 +775,9 @@ export interface Database {
           no_incluye?: string;
           estado?: PresupuestoEstado;
           evento_id?: string | null;
+          margen_objetivo_pct?: number | null;
+          pct_imprevistos?: number;
+          costo_congelado_en?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -764,27 +802,39 @@ export interface Database {
         Row: {
           id: string;
           presupuesto_id: string;
-          receta_id: string;
+          receta_id: string | null;
           cantidad: number;
           precio_unitario: number;
+          descripcion: string | null;
+          categoria: PresupuestoItemCategoria;
+          costo_unitario: number | null;
+          personal_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           presupuesto_id: string;
-          receta_id: string;
+          receta_id?: string | null;
           cantidad: number;
           precio_unitario?: number;
+          descripcion?: string | null;
+          categoria?: PresupuestoItemCategoria;
+          costo_unitario?: number | null;
+          personal_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           presupuesto_id?: string;
-          receta_id?: string;
+          receta_id?: string | null;
           cantidad?: number;
           precio_unitario?: number;
+          descripcion?: string | null;
+          categoria?: PresupuestoItemCategoria;
+          costo_unitario?: number | null;
+          personal_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1045,6 +1095,27 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      parametros_tipo_evento: {
+        Row: {
+          tipo: string;
+          margen_objetivo_pct: number;
+          pct_imprevistos: number;
+          updated_at: string;
+        };
+        Insert: {
+          tipo: string;
+          margen_objetivo_pct?: number;
+          pct_imprevistos?: number;
+          updated_at?: string;
+        };
+        Update: {
+          tipo?: string;
+          margen_objetivo_pct?: number;
+          pct_imprevistos?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

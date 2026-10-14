@@ -214,7 +214,8 @@ export type PresupuestoPdfProps = {
     clientes: { nombre: string; email: string | null; telefono: string | null } | null;
   };
   items: {
-    receta_id: string;
+    receta_id: string | null;
+    descripcion: string | null;
     cantidad: number;
     precio_unitario: number;
     recetas: { nombre: string } | null;
@@ -328,10 +329,10 @@ export function PresupuestoPdf({ presupuesto, items }: PresupuestoPdfProps) {
           </Text>
         </View>
         {items.map((item, i) => (
-          <View key={item.receta_id + i} style={styles.tablaFila}>
+          <View key={(item.receta_id ?? item.descripcion ?? "") + i} style={styles.tablaFila}>
             <Text style={styles.colItem}>{i + 1}</Text>
             <Text style={styles.colDescripcion}>
-              {item.recetas?.nombre ?? "Receta"}
+              {item.recetas?.nombre ?? item.descripcion ?? "Ítem"}
             </Text>
             <Text style={styles.colCantidad}>{item.cantidad}</Text>
             <Text style={styles.colPrecio}>{formatMonto(item.precio_unitario)}</Text>

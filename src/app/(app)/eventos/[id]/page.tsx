@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { margenPct } from "@/lib/cotizaciones/margen";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -100,9 +101,13 @@ export default async function EventoDetallePage({
           <h1 className="font-display text-xl font-semibold text-bordo-600">
             {evento.nombre}
           </h1>
-          <span className="text-sm text-zinc-500">
-            {evento.clientes?.nombre ?? "Sin cliente"}
-          </span>
+          {evento.clientes ? (
+            <Link href={`/clientes/${evento.clientes.id}`} className="text-sm text-fucsia-600">
+              {evento.clientes.nombre}
+            </Link>
+          ) : (
+            <span className="text-sm text-zinc-500">Sin cliente</span>
+          )}
         </div>
         <span
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${ESTADO_BADGE_CLASSES[evento.estado]}`}
@@ -127,6 +132,16 @@ export default async function EventoDetallePage({
             evento.margen_objetivo !== null ? `${evento.margen_objetivo}%` : "-"
           }
         />
+        {evento.costo_cotizado !== null && (
+          <Campo
+            label="Costo cotizado"
+            value={`${formatGuaranies(evento.costo_cotizado)}${
+              evento.precio_total
+                ? ` · margen ${margenPct(Number(evento.precio_total), Number(evento.costo_cotizado))?.toFixed(1)} %`
+                : ""
+            }`}
+          />
+        )}
         <Campo
           label="Cotización"
           value={
