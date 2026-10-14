@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { convertirUnidad } from "@/lib/recetas/costo";
+import {
+  convertirPrecio,
+  convertirUnidad,
+  costoPromedioPonderado,
+} from "@/lib/recetas/costo";
 import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
 
 export type CompraFormState = { error?: string };
@@ -103,7 +107,7 @@ export async function crearCompra(
   for (const fila of filas) {
     const { data: insumo, error: insumoError } = await supabase
       .from("insumos")
-      .select("stock_actual, unidad")
+      .select("stock_actual, unidad, costo_unitario")
       .eq("id", fila.insumo_id)
       .maybeSingle();
 
@@ -121,31 +125,61 @@ export async function crearCompra(
 
     if (movError) return { error: movError.message };
 
-    // La cantidad puede venir en una unidad distinta a la de stock (ej.
-    // compra en gramos, stock en kilos); si no son compatibles, se deja el
-    // stock sin tocar para ese insumo (el movimiento igual queda registrado).
+    // La cantidad y el precio pueden venir en una unidad distinta a la del
+    // insumo (ej. compra en gramos, insumo en kilos): se convierten las dos
+    // antes de sumar stock y promediar el costo. Si no son compatibles, el
+    // movimiento igual queda registrado pero no se tocan stock ni costo.
     const cantidadEnUnidadDeStock = convertirUnidad(
       fila.cantidad,
       fila.unidad,
       insumo.unidad,
     );
+    const precioEnUnidadDeStock = convertirPrecio(
+      fila.costo_unitario,
+      fila.unidad,
+      insumo.unidad,
+    );
 
-    const nuevoStock =
-      cantidadEnUnidadDeStock !== null
-        ? Number(insumo.stock_actual) + cantidadEnUnidadDeStock
-        : Number(insumo.stock_actual);
+    if (cantidadEnUnidadDeStock === null || precioEnUnidadDeStock === null) {
+      continue;
+    }
 
-    // El costo unitario ingresado actualiza el precio de referencia del
-    // insumo, por si cambió en esta compra puntual.
+    const stockPrevio = Number(insumo.stock_actual);
+    const costoPrevio = Number(insumo.costo_unitario);
+    const nuevoStock = stockPrevio + cantidadEnUnidadDeStock;
+
+    // Costo vivo = promedio ponderado entre lo que había y lo que entra.
+    const nuevoCosto =
+      Math.round(
+        costoPromedioPonderado(
+          stockPrevio,
+          costoPrevio,
+          cantidadEnUnidadDeStock,
+          precioEnUnidadDeStock,
+        ) * 100,
+      ) / 100;
+
     const { error: updateError } = await supabase
       .from("insumos")
-      .update({ stock_actual: nuevoStock, costo_unitario: fila.costo_unitario })
+      .update({ stock_actual: nuevoStock, costo_unitario: nuevoCosto })
       .eq("id", fila.insumo_id);
 
     if (updateError) return { error: updateError.message };
+
+    if (nuevoCosto !== costoPrevio) {
+      const { error: historialError } = await supabase.from("costo_historial").insert({
+        insumo_id: fila.insumo_id,
+        costo_anterior: costoPrevio,
+        costo_nuevo: nuevoCosto,
+        origen: "compra",
+        compra_id: compra.id,
+      });
+      if (historialError) return { error: historialError.message };
+    }
   }
 
   revalidatePath("/compras");
+  revalidatePath("/recetas");
   revalidatePath("/insumos");
   revalidatePath("/");
   redirect(`/compras/${compra.id}`);

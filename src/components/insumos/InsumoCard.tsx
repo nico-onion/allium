@@ -13,6 +13,7 @@ export type InsumoParaCard = {
   unidad: InsumoUnidad;
   tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
   costo_unitario: number;
+  merma_pct: number | null;
   stock_actual: number;
   stock_minimo: number;
   proveedores: { nombre: string } | null;
@@ -31,6 +32,11 @@ export function InsumoCard({ insumo }: { insumo: InsumoParaCard }) {
       <div className="flex items-start justify-between gap-2">
         <span className="font-medium text-zinc-900">{insumo.nombre}</span>
         <div className="flex shrink-0 items-center gap-2">
+          {insumo.merma_pct === null && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              Merma pendiente
+            </span>
+          )}
           {enAlerta && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
               Bajo stock
@@ -48,6 +54,7 @@ export function InsumoCard({ insumo }: { insumo: InsumoParaCard }) {
       </div>
       <span className="text-sm text-zinc-500">
         {insumo.proveedores?.nombre ?? "Sin proveedor"}
+        {insumo.merma_pct !== null && ` · merma ${Number(insumo.merma_pct)} %`}
       </span>
       <div className="mt-1 flex items-center justify-between text-sm">
         <span className={enAlerta ? "text-red-600" : "text-zinc-500"}>

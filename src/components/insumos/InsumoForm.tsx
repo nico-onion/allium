@@ -19,6 +19,7 @@ export type InsumoFormValues = {
   costo_unitario: number;
   stock_actual: number;
   stock_minimo: number;
+  merma_pct: number | null;
   proveedor_id: string | null;
 };
 
@@ -132,7 +133,7 @@ export function InsumoForm({
 
         <div className="flex flex-col gap-2">
           <label htmlFor="costo_unitario" className={labelClasses}>
-            Costo unitario (Gs.)
+            Costo por unidad (Gs.)
           </label>
           <input
             id="costo_unitario"
@@ -144,6 +145,27 @@ export function InsumoForm({
             className={inputClasses}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="merma_pct" className={labelClasses}>
+          Merma (%)
+        </label>
+        <input
+          id="merma_pct"
+          name="merma_pct"
+          type="number"
+          min={0}
+          max={99.99}
+          step="any"
+          placeholder="Pendiente"
+          defaultValue={defaultValues?.merma_pct ?? ""}
+          className={inputClasses}
+        />
+        <span className="text-xs text-zinc-400">
+          Vacío si todavía no la mediste. 0 para productos secos o envasados.
+          Con pruebas de rendimiento se calcula sola.
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
