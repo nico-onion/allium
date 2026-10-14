@@ -94,7 +94,6 @@ export default async function RecetaDetallePage({
             <Dato
               label="Precio por porción"
               value={formatGuaranies(receta.precio_venta)}
-              detalle={`${formatGuaranies(costo.precioNeto)} sin IVA`}
             />
             {costo.foodCostPct !== null && costo.margenPorPorcion !== null && (
               <Dato

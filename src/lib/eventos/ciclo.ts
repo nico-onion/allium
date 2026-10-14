@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { margenPct, precioSinIva } from "@/lib/cotizaciones/margen";
+import { margenPct } from "@/lib/cotizaciones/margen";
 
 type Supabase = SupabaseClient<Database>;
 
@@ -113,8 +113,7 @@ export function resumenCiclo(
     ejecutado,
     presupuestado: evento.costo_cotizado === null ? null : Number(evento.costo_cotizado),
     margenReal: precio ? margenPct(precio, ejecutado) : null,
-    // sobre el precio sin IVA, igual que el margen
-    gananciaReal: precio === null ? null : Math.round(precioSinIva(precio) - ejecutado),
+    gananciaReal: precio === null ? null : Math.round(precio - ejecutado),
     checklist,
     listoParaCerrar: checklist.every((item) => item.ok),
   };
