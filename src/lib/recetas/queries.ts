@@ -11,7 +11,7 @@ export async function getRecetasParaCosto(
   const { data, error } = await supabase
     .from("recetas")
     .select(
-      "id, nombre, categoria, porcion_base, es_subreceta, rendimiento_unidad, pct_varios, precio_venta, receta_insumos(cantidad, unidad, insumos(id, nombre, costo_unitario, unidad, merma_pct)), receta_subrecetas!receta_subrecetas_receta_id_fkey(cantidad, unidad, subreceta_id)",
+      "id, nombre, categoria, porcion_base, es_subreceta, rendimiento_unidad, pct_varios, precio_venta, receta_insumos(cantidad, unidad, insumos(id, nombre, costo_unitario, unidad, merma_pct, marca_preferida, marca_alternativa)), receta_subrecetas!receta_subrecetas_receta_id_fkey(cantidad, unidad, subreceta_id)",
     )
     .order("nombre", { ascending: true });
 

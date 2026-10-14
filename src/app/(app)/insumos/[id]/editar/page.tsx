@@ -58,6 +58,8 @@ export default async function EditarInsumoPage({
             stock_actual: insumo.stock_actual,
             stock_minimo: insumo.stock_minimo,
             merma_pct: merma,
+            marca_preferida: insumo.marca_preferida,
+            marca_alternativa: insumo.marca_alternativa,
             proveedor_id: insumo.proveedor_id,
           }}
           action={actualizarEsteInsumo}

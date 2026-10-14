@@ -116,6 +116,8 @@ export type InsumoDeReceta = {
   costo_unitario: number;
   unidad: InsumoUnidad;
   merma_pct: number | null;
+  marca_preferida?: string | null;
+  marca_alternativa?: string | null;
 };
 
 export type RecetaParaCosto = {
@@ -148,6 +150,8 @@ export type LineaCosto = {
   costo: number | null;
   mermaPct: number | null;
   mermaPendiente: boolean;
+  marcaPreferida: string | null;
+  marcaAlternativa: string | null;
 };
 
 export type CostoCompleto = {
@@ -219,6 +223,8 @@ export function calcularCostoCompleto(
       costo,
       mermaPct: insumo.merma_pct,
       mermaPendiente,
+      marcaPreferida: insumo.marca_preferida ?? null,
+      marcaAlternativa: insumo.marca_alternativa ?? null,
     });
   }
 
@@ -252,6 +258,8 @@ export function calcularCostoCompleto(
       costo,
       mermaPct: null,
       mermaPendiente: false,
+      marcaPreferida: null,
+      marcaAlternativa: null,
     });
   }
 
@@ -293,6 +301,8 @@ export type InsumoBruto = {
   insumoNombre: string;
   unidad: InsumoUnidad;
   cantidad: number;
+  marcaPreferida: string | null;
+  marcaAlternativa: string | null;
 };
 
 export function expandirInsumosBrutos(
@@ -320,6 +330,8 @@ export function expandirInsumosBrutos(
         insumoNombre: insumo.nombre,
         unidad: ri.unidad,
         cantidad,
+        marcaPreferida: insumo.marca_preferida ?? null,
+        marcaAlternativa: insumo.marca_alternativa ?? null,
       });
     }
   }

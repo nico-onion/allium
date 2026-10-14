@@ -5,6 +5,8 @@ export type OrdenCompraItem = {
   id: string;
   insumoId: string;
   insumoNombre: string;
+  marcaPreferida: string | null;
+  marcaAlternativa: string | null;
   cantidad: number;
   cantidadUsada: number | null;
   unidad: InsumoUnidad;
@@ -36,7 +38,7 @@ export async function getOrdenCompra(
   const { data: items, error: itemsError } = await supabase
     .from("orden_compra_items")
     .select(
-      "id, insumo_id, cantidad, cantidad_usada, unidad, insumos(nombre, unidad, stock_actual)",
+      "id, insumo_id, cantidad, cantidad_usada, unidad, insumos(nombre, unidad, stock_actual, marca_preferida, marca_alternativa)",
     )
     .eq("orden_compra_id", orden.id);
 
@@ -51,6 +53,8 @@ export async function getOrdenCompra(
       id: item.id,
       insumoId: item.insumo_id,
       insumoNombre: item.insumos?.nombre ?? "Insumo",
+      marcaPreferida: item.insumos?.marca_preferida ?? null,
+      marcaAlternativa: item.insumos?.marca_alternativa ?? null,
       cantidad: item.cantidad,
       cantidadUsada: item.cantidad_usada,
       unidad: item.unidad,
