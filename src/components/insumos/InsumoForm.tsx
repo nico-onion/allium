@@ -20,6 +20,8 @@ export type InsumoFormValues = {
   stock_actual: number;
   stock_minimo: number;
   merma_pct: number | null;
+  marca_preferida: string | null;
+  marca_alternativa: string | null;
   proveedor_id: string | null;
 };
 
@@ -142,6 +144,33 @@ export function InsumoForm({
             min={0}
             step="1"
             defaultValue={defaultValues?.costo_unitario ?? ""}
+            className={inputClasses}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="marca_preferida" className={labelClasses}>
+            Marca preferida
+          </label>
+          <input
+            id="marca_preferida"
+            name="marca_preferida"
+            placeholder="Ej. Natura"
+            defaultValue={defaultValues?.marca_preferida ?? ""}
+            className={inputClasses}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="marca_alternativa" className={labelClasses}>
+            Si no hay
+          </label>
+          <input
+            id="marca_alternativa"
+            name="marca_alternativa"
+            placeholder="Ej. Hellmann's"
+            defaultValue={defaultValues?.marca_alternativa ?? ""}
             className={inputClasses}
           />
         </div>

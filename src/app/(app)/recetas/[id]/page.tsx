@@ -5,6 +5,7 @@ import { getRecetasParaCosto } from "@/lib/recetas/queries";
 import { armarMapaRecetas, calcularCostoCompleto } from "@/lib/recetas/costo";
 import { UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { formatCantidad, formatGuaranies } from "@/lib/format";
+import { textoMarca } from "@/lib/insumos/marca";
 
 function Dato({
   label,
@@ -131,6 +132,9 @@ export default async function RecetaDetallePage({
                   <span className="text-xs text-zinc-400">
                     {formatCantidad(linea.cantidad)} {UNIDAD_LABELS_CORTAS[linea.unidad]}
                     {linea.tipo === "subreceta" && " · sub-receta"}
+                    {linea.tipo === "insumo" &&
+                      textoMarca(linea.marcaPreferida, linea.marcaAlternativa) &&
+                      ` · ${textoMarca(linea.marcaPreferida, linea.marcaAlternativa)}`}
                     {linea.tipo === "insumo" &&
                       (linea.mermaPendiente
                         ? " · merma pendiente"

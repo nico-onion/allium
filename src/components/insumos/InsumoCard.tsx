@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TIPO_ALMACENAMIENTO_LABELS, UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { estaBajoStockMinimo } from "@/lib/insumos/categorias";
 import { formatGuaranies } from "@/lib/format";
+import { textoMarca } from "@/lib/insumos/marca";
 import type {
   InsumoTipoAlmacenamiento,
   InsumoUnidad,
@@ -14,6 +15,8 @@ export type InsumoParaCard = {
   tipo_almacenamiento: InsumoTipoAlmacenamiento | null;
   costo_unitario: number;
   merma_pct: number | null;
+  marca_preferida: string | null;
+  marca_alternativa: string | null;
   stock_actual: number;
   stock_minimo: number;
   proveedores: { nombre: string } | null;
@@ -53,6 +56,7 @@ export function InsumoCard({ insumo }: { insumo: InsumoParaCard }) {
         </div>
       </div>
       <span className="text-sm text-zinc-500">
+        {textoMarca(insumo.marca_preferida, insumo.marca_alternativa) ?? "Sin marca definida"} ·{" "}
         {insumo.proveedores?.nombre ?? "Sin proveedor"}
         {insumo.merma_pct !== null && ` · merma ${Number(insumo.merma_pct)} %`}
       </span>

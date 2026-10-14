@@ -67,6 +67,8 @@ function buildInsumoPayload(formData: FormData, proveedorId: string | null) {
     stock_actual: Number(formData.get("stock_actual")) || 0,
     stock_minimo: Number(formData.get("stock_minimo")) || 0,
     merma_pct: parseMerma(formData.get("merma_pct")),
+    marca_preferida: (formData.get("marca_preferida") as string)?.trim() || null,
+    marca_alternativa: (formData.get("marca_alternativa") as string)?.trim() || null,
     proveedor_id: proveedorId,
   };
 }

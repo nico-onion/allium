@@ -305,6 +305,8 @@ export interface Database {
           costo_unitario: number;
           costo_contable: number;
           merma_pct: number | null;
+          marca_preferida: string | null;
+          marca_alternativa: string | null;
           stock_actual: number;
           stock_minimo: number;
           proveedor_id: string | null;
@@ -320,6 +322,8 @@ export interface Database {
           costo_unitario?: number;
           costo_contable?: number;
           merma_pct?: number | null;
+          marca_preferida?: string | null;
+          marca_alternativa?: string | null;
           stock_actual?: number;
           stock_minimo?: number;
           proveedor_id?: string | null;
@@ -335,6 +339,8 @@ export interface Database {
           costo_unitario?: number;
           costo_contable?: number;
           merma_pct?: number | null;
+          marca_preferida?: string | null;
+          marca_alternativa?: string | null;
           stock_actual?: number;
           stock_minimo?: number;
           proveedor_id?: string | null;

@@ -1,5 +1,6 @@
 import { formatCantidad, formatFecha } from "@/lib/format";
 import type { OrdenCompra } from "./queries";
+import { textoMarca } from "@/lib/insumos/marca";
 
 type EventoParaEmail = { nombre: string; fecha: string; invitados: number };
 
@@ -24,7 +25,11 @@ export function construirHtmlOrdenCompra(
     .map(
       (item) => `
         <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;">${escapeHtml(item.insumoNombre)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;">${escapeHtml(item.insumoNombre)}${
+            textoMarca(item.marcaPreferida, item.marcaAlternativa)
+              ? `<br /><span style="font-size:12px;color:#71717a;">${escapeHtml(textoMarca(item.marcaPreferida, item.marcaAlternativa)!)}</span>`
+              : ""
+          }</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;text-align:right;">${formatCantidad(item.cantidad)}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;color:#71717a;">${escapeHtml(item.unidad)}</td>
         </tr>`,

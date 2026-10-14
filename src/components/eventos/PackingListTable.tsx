@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PackingListItem } from "@/lib/eventos/packing-list";
 import { formatCantidad as formatearCantidad } from "@/lib/format";
+import { textoMarca } from "@/lib/insumos/marca";
 
 export function PackingListTable({ items }: { items: PackingListItem[] }) {
   const [copiado, setCopiado] = useState(false);
@@ -19,7 +20,10 @@ export function PackingListTable({ items }: { items: PackingListItem[] }) {
     const texto = items
       .map(
         (item) =>
-          `${item.insumoNombre}: ${formatearCantidad(item.cantidad)} ${item.unidad}`,
+        {
+          const marca = textoMarca(item.marcaPreferida, item.marcaAlternativa);
+          return `${item.insumoNombre}${marca ? ` (${marca})` : ""}: ${formatearCantidad(item.cantidad)} ${item.unidad}`;
+        },
       )
       .join("\n");
     await navigator.clipboard.writeText(texto);
@@ -44,7 +48,14 @@ export function PackingListTable({ items }: { items: PackingListItem[] }) {
                 key={`${item.insumoId}-${item.unidad}`}
                 className="border-b border-zinc-100 last:border-0"
               >
-                <td className="px-3 py-2 text-zinc-900">{item.insumoNombre}</td>
+                <td className="px-3 py-2 text-zinc-900">
+                  {item.insumoNombre}
+                  {textoMarca(item.marcaPreferida, item.marcaAlternativa) && (
+                    <span className="block text-xs text-zinc-400">
+                      {textoMarca(item.marcaPreferida, item.marcaAlternativa)}
+                    </span>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-right text-zinc-900">
                   {formatearCantidad(item.cantidad)}
                 </td>
