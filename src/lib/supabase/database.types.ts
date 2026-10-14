@@ -44,6 +44,26 @@ export type CostoHistorialOrigen = "compra" | "manual";
 
 export type ClienteTipo = "persona" | "empresa";
 
+export type CompraEstado = "borrador" | "confirmada";
+
+export type CompraOrigen = "manual" | "bill";
+
+export type CompraLineaDestino = "insumo" | "gasto";
+
+export type GastoCategoria =
+  | "mercaderia"
+  | "descartables"
+  | "combustible"
+  | "mano_obra"
+  | "transporte"
+  | "alquiler"
+  | "imprevisto"
+  | "otro";
+
+export type CobroTipo = "sena" | "saldo" | "otro";
+
+export type CobroMedio = "transferencia" | "efectivo" | "tarjeta" | "qr" | "otro";
+
 export type ClienteOrigen =
   | "instagram"
   | "meta_ads"
@@ -121,6 +141,9 @@ export interface Database {
           costo_cotizado: number | null;
           created_at: string;
           updated_at: string;
+          codigo: string | null;
+          resena_enviada_en: string | null;
+          cerrado_en: string | null;
         };
         Insert: {
           id?: string;
@@ -138,6 +161,9 @@ export interface Database {
           costo_cotizado?: number | null;
           created_at?: string;
           updated_at?: string;
+          codigo?: string | null;
+          resena_enviada_en?: string | null;
+          cerrado_en?: string | null;
         };
         Update: {
           id?: string;
@@ -155,6 +181,9 @@ export interface Database {
           costo_cotizado?: number | null;
           created_at?: string;
           updated_at?: string;
+          codigo?: string | null;
+          resena_enviada_en?: string | null;
+          cerrado_en?: string | null;
         };
         Relationships: [
           {
@@ -692,6 +721,14 @@ export interface Database {
           fecha: string;
           numero_factura: string | null;
           created_at: string;
+          estado: CompraEstado;
+          origen: CompraOrigen;
+          evento_id: string | null;
+          total: number | null;
+          proveedor_texto: string | null;
+          ruc_proveedor: string | null;
+          comprobante_url: string | null;
+          confirmada_en: string | null;
         };
         Insert: {
           id?: string;
@@ -699,6 +736,14 @@ export interface Database {
           fecha?: string;
           numero_factura?: string | null;
           created_at?: string;
+          estado?: CompraEstado;
+          origen?: CompraOrigen;
+          evento_id?: string | null;
+          total?: number | null;
+          proveedor_texto?: string | null;
+          ruc_proveedor?: string | null;
+          comprobante_url?: string | null;
+          confirmada_en?: string | null;
         };
         Update: {
           id?: string;
@@ -706,6 +751,14 @@ export interface Database {
           fecha?: string;
           numero_factura?: string | null;
           created_at?: string;
+          estado?: CompraEstado;
+          origen?: CompraOrigen;
+          evento_id?: string | null;
+          total?: number | null;
+          proveedor_texto?: string | null;
+          ruc_proveedor?: string | null;
+          comprobante_url?: string | null;
+          confirmada_en?: string | null;
         };
         Relationships: [
           {
@@ -713,6 +766,13 @@ export interface Database {
             columns: ["proveedor_id"];
             isOneToOne: false;
             referencedRelation: "proveedores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compras_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
             referencedColumns: ["id"];
           },
         ];
@@ -1092,6 +1152,237 @@ export interface Database {
             columns: ["insumo_id"];
             isOneToOne: false;
             referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      compra_lineas: {
+        Row: {
+          id: string;
+          compra_id: string;
+          orden: number;
+          descripcion: string;
+          cantidad: number;
+          unidad: InsumoUnidad;
+          precio_unitario: number;
+          subtotal: number;
+          destino: CompraLineaDestino | null;
+          insumo_id: string | null;
+          factor: number | null;
+          categoria_gasto: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          compra_id: string;
+          orden?: number;
+          descripcion: string;
+          cantidad: number;
+          unidad?: InsumoUnidad;
+          precio_unitario: number;
+          subtotal: number;
+          destino?: CompraLineaDestino | null;
+          insumo_id?: string | null;
+          factor?: number | null;
+          categoria_gasto?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          compra_id?: string;
+          orden?: number;
+          descripcion?: string;
+          cantidad?: number;
+          unidad?: InsumoUnidad;
+          precio_unitario?: number;
+          subtotal?: number;
+          destino?: CompraLineaDestino | null;
+          insumo_id?: string | null;
+          factor?: number | null;
+          categoria_gasto?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "compra_lineas_compra_id_fkey";
+            columns: ["compra_id"];
+            isOneToOne: false;
+            referencedRelation: "compras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compra_lineas_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      alias_compras: {
+        Row: {
+          id: string;
+          clave_proveedor: string;
+          descripcion_normalizada: string;
+          destino: CompraLineaDestino;
+          insumo_id: string | null;
+          categoria_gasto: string | null;
+          factor: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          clave_proveedor: string;
+          descripcion_normalizada: string;
+          destino: CompraLineaDestino;
+          insumo_id?: string | null;
+          categoria_gasto?: string | null;
+          factor?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          clave_proveedor?: string;
+          descripcion_normalizada?: string;
+          destino?: CompraLineaDestino;
+          insumo_id?: string | null;
+          categoria_gasto?: string | null;
+          factor?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "alias_compras_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      gastos_evento: {
+        Row: {
+          id: string;
+          evento_id: string;
+          fecha: string;
+          categoria: GastoCategoria;
+          descripcion: string;
+          monto: number;
+          compra_linea_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          evento_id: string;
+          fecha?: string;
+          categoria: GastoCategoria;
+          descripcion: string;
+          monto: number;
+          compra_linea_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          evento_id?: string;
+          fecha?: string;
+          categoria?: GastoCategoria;
+          descripcion?: string;
+          monto?: number;
+          compra_linea_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gastos_evento_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gastos_evento_compra_linea_id_fkey";
+            columns: ["compra_linea_id"];
+            isOneToOne: false;
+            referencedRelation: "compra_lineas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cobros: {
+        Row: {
+          id: string;
+          evento_id: string;
+          tipo: CobroTipo;
+          monto: number;
+          fecha: string;
+          medio: CobroMedio;
+          comprobante: string | null;
+          nota: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          evento_id: string;
+          tipo: CobroTipo;
+          monto: number;
+          fecha?: string;
+          medio?: CobroMedio;
+          comprobante?: string | null;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          evento_id?: string;
+          tipo?: CobroTipo;
+          monto?: number;
+          fecha?: string;
+          medio?: CobroMedio;
+          comprobante?: string | null;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cobros_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      facturas_venta: {
+        Row: {
+          id: string;
+          evento_id: string;
+          numero: string;
+          fecha: string;
+          monto: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          evento_id: string;
+          numero: string;
+          fecha?: string;
+          monto: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          evento_id?: string;
+          numero?: string;
+          fecha?: string;
+          monto?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "facturas_venta_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
             referencedColumns: ["id"];
           },
         ];

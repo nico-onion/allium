@@ -30,7 +30,11 @@ export function formatFechaCorta(fecha: string): string {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(fecha));
+  }).format(
+    // "2026-10-11" se interpreta como medianoche UTC, que en Paraguay es el
+    // día anterior: se ancla al mediodía para mostrar el día correcto.
+    new Date(/^\d{4}-\d{2}-\d{2}$/.test(fecha) ? `${fecha}T12:00:00` : fecha),
+  );
 }
 
 export function formatCantidad(n: number): string {

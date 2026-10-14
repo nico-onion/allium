@@ -30,7 +30,7 @@ export async function getEvento(supabase: SupabaseClient<Database>, id: string) 
   const { data, error } = await supabase
     .from("eventos")
     .select(
-      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_por_persona, precio_total, margen_objetivo, costo_cotizado, link_cotizacion, cliente_id, clientes(id, nombre)",
+      "id, nombre, tipo, fecha, invitados, estado, ubicacion, precio_por_persona, precio_total, margen_objetivo, costo_cotizado, link_cotizacion, cliente_id, codigo, resena_enviada_en, cerrado_en, clientes(id, nombre, telefono)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -99,6 +99,22 @@ export async function getRecetasParaSelector(supabase: SupabaseClient<Database>)
     .from("recetas")
     .select("id, nombre, porcion_base")
     .order("nombre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// Eventos a los que se les puede asignar una compra o un gasto: los no
+// cerrados, de los últimos 60 días en adelante.
+export async function getEventosParaSelector(supabase: SupabaseClient<Database>) {
+  const desde = new Date(Date.now() - 60 * 864e5).toISOString();
+  const { data, error } = await supabase
+    .from("eventos")
+    .select("id, nombre, codigo, fecha")
+    .is("cerrado_en", null)
+    .neq("estado", "cancelado")
+    .gte("fecha", desde)
+    .order("fecha", { ascending: true });
 
   if (error) throw new Error(error.message);
   return data;
