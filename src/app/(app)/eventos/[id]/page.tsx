@@ -51,6 +51,20 @@ import {
   eliminarTurno,
   toggleConfirmadoTurno,
 } from "../turnos-actions";
+import {
+  cerrarEventoCiclo,
+  eliminarCobro,
+  eliminarFacturaVenta,
+  eliminarGastoEvento,
+  enviarResena,
+  reabrirEvento,
+  registrarCobro,
+  registrarFacturaVenta,
+  registrarGastoEvento,
+} from "../ciclo-actions";
+import { getCicloEvento, resumenCiclo } from "@/lib/eventos/ciclo";
+import { CicloEventoSeccion } from "@/components/eventos/CicloEventoSeccion";
+import { CopiarCodigo } from "@/components/eventos/CicloForms";
 import type { EventoEstado } from "@/lib/supabase/database.types";
 
 const ACCIONES_RAPIDAS = Object.keys(
@@ -87,12 +101,15 @@ export default async function EventoDetallePage({
   const packingList = calcularPackingList(menuItems, mapaRecetas);
   const ordenCompra = await getOrdenCompra(supabase, evento.id);
 
-  const [recetas, insumos, turnos, personalParaSelector] = await Promise.all([
+  const [recetas, insumos, turnos, personalParaSelector, ciclo] = await Promise.all([
     getRecetasParaSelector(supabase),
     getInsumosParaSelector(supabase),
     getTurnosDeEvento(supabase, evento.id),
     getPersonalParaSelector(supabase),
+    getCicloEvento(supabase, evento.id),
   ]);
+  const resumen = resumenCiclo(ciclo, evento);
+  const cerrado = evento.cerrado_en !== null;
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 py-4">
@@ -101,6 +118,11 @@ export default async function EventoDetallePage({
           <h1 className="font-display text-xl font-semibold text-bordo-600">
             {evento.nombre}
           </h1>
+          {evento.codigo && (
+            <div className="my-1">
+              <CopiarCodigo codigo={evento.codigo} />
+            </div>
+          )}
           {evento.clientes ? (
             <Link href={`/clientes/${evento.clientes.id}`} className="text-sm text-fucsia-600">
               {evento.clientes.nombre}
@@ -330,6 +352,25 @@ export default async function EventoDetallePage({
           action={asignarPersonalAEvento.bind(null, evento.id)}
         />
       </div>
+
+      <CicloEventoSeccion
+        eventoId={evento.id}
+        ciclo={ciclo}
+        resumen={resumen}
+        cerrado={cerrado}
+        resenaEnviadaEn={evento.resena_enviada_en}
+        acciones={{
+          registrarCobro: registrarCobro.bind(null, evento.id),
+          eliminarCobro: (cobroId) => eliminarCobro.bind(null, evento.id, cobroId),
+          registrarFactura: registrarFacturaVenta.bind(null, evento.id),
+          eliminarFactura: (facturaId) => eliminarFacturaVenta.bind(null, evento.id, facturaId),
+          registrarGasto: registrarGastoEvento.bind(null, evento.id),
+          eliminarGasto: (gastoId) => eliminarGastoEvento.bind(null, evento.id, gastoId),
+          enviarResena: enviarResena.bind(null, evento.id),
+          cerrar: cerrarEventoCiclo.bind(null, evento.id),
+          reabrir: reabrirEvento.bind(null, evento.id),
+        }}
+      />
 
       <div className="flex flex-col gap-2">
         <span className="text-xs uppercase tracking-wide text-zinc-400">

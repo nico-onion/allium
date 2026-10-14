@@ -4,11 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  convertirPrecio,
-  convertirUnidad,
-  costoPromedioPonderado,
-} from "@/lib/recetas/costo";
+import { ingresarInsumoComprado } from "@/lib/compras/registrar";
 import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
 
 export type CompraFormState = { error?: string };
@@ -90,12 +86,19 @@ export async function crearCompra(
     return { error: "No repitas el mismo insumo en dos filas." };
   }
 
+  const eventoId = (formData.get("evento_id") as string) || null;
+  const total = filas.reduce((acc, fila) => acc + fila.cantidad * fila.costo_unitario, 0);
+
   const { data: compra, error: compraError } = await supabase
     .from("compras")
     .insert({
       proveedor_id: proveedorResult.proveedorId,
       fecha,
       numero_factura: numeroFactura,
+      evento_id: eventoId,
+      total,
+      estado: "confirmada",
+      confirmada_en: new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -104,82 +107,45 @@ export async function crearCompra(
     return { error: compraError?.message ?? "No se pudo crear la compra." };
   }
 
-  for (const fila of filas) {
-    const { data: insumo, error: insumoError } = await supabase
-      .from("insumos")
-      .select("stock_actual, unidad, costo_unitario")
-      .eq("id", fila.insumo_id)
-      .maybeSingle();
+  // Cada fila queda también como línea de la compra (para el ejecutado del
+  // evento) y entra al stock con el costo por promedio ponderado.
+  const { data: insumos, error: insumosError } = await supabase
+    .from("insumos")
+    .select("id, nombre")
+    .in("id", filas.map((fila) => fila.insumo_id));
+  if (insumosError) return { error: insumosError.message };
+  const nombres = new Map(insumos.map((insumo) => [insumo.id, insumo.nombre]));
 
-    if (insumoError || !insumo) {
-      return { error: insumoError?.message ?? "No se encontró un insumo de la compra." };
-    }
-
-    const { error: movError } = await supabase.from("movimientos_stock").insert({
-      insumo_id: fila.insumo_id,
-      tipo: "compra",
+  const { error: lineasError } = await supabase.from("compra_lineas").insert(
+    filas.map((fila, i) => ({
+      compra_id: compra.id,
+      orden: i,
+      descripcion: nombres.get(fila.insumo_id) ?? "Insumo",
       cantidad: fila.cantidad,
       unidad: fila.unidad,
-      compra_id: compra.id,
+      precio_unitario: fila.costo_unitario,
+      subtotal: fila.cantidad * fila.costo_unitario,
+      destino: "insumo",
+      insumo_id: fila.insumo_id,
+    })),
+  );
+  if (lineasError) return { error: lineasError.message };
+
+  for (const fila of filas) {
+    const resultado = await ingresarInsumoComprado(supabase, {
+      compraId: compra.id,
+      insumoId: fila.insumo_id,
+      cantidad: fila.cantidad,
+      unidad: fila.unidad,
+      subtotal: fila.cantidad * fila.costo_unitario,
+      factor: null,
     });
-
-    if (movError) return { error: movError.message };
-
-    // La cantidad y el precio pueden venir en una unidad distinta a la del
-    // insumo (ej. compra en gramos, insumo en kilos): se convierten las dos
-    // antes de sumar stock y promediar el costo. Si no son compatibles, el
-    // movimiento igual queda registrado pero no se tocan stock ni costo.
-    const cantidadEnUnidadDeStock = convertirUnidad(
-      fila.cantidad,
-      fila.unidad,
-      insumo.unidad,
-    );
-    const precioEnUnidadDeStock = convertirPrecio(
-      fila.costo_unitario,
-      fila.unidad,
-      insumo.unidad,
-    );
-
-    if (cantidadEnUnidadDeStock === null || precioEnUnidadDeStock === null) {
-      continue;
-    }
-
-    const stockPrevio = Number(insumo.stock_actual);
-    const costoPrevio = Number(insumo.costo_unitario);
-    const nuevoStock = stockPrevio + cantidadEnUnidadDeStock;
-
-    // Costo vivo = promedio ponderado entre lo que había y lo que entra.
-    const nuevoCosto =
-      Math.round(
-        costoPromedioPonderado(
-          stockPrevio,
-          costoPrevio,
-          cantidadEnUnidadDeStock,
-          precioEnUnidadDeStock,
-        ) * 100,
-      ) / 100;
-
-    const { error: updateError } = await supabase
-      .from("insumos")
-      .update({ stock_actual: nuevoStock, costo_unitario: nuevoCosto })
-      .eq("id", fila.insumo_id);
-
-    if (updateError) return { error: updateError.message };
-
-    if (nuevoCosto !== costoPrevio) {
-      const { error: historialError } = await supabase.from("costo_historial").insert({
-        insumo_id: fila.insumo_id,
-        costo_anterior: costoPrevio,
-        costo_nuevo: nuevoCosto,
-        origen: "compra",
-        compra_id: compra.id,
-      });
-      if (historialError) return { error: historialError.message };
-    }
+    if (resultado.error) return { error: resultado.error };
   }
 
   revalidatePath("/compras");
   revalidatePath("/recetas");
+  revalidatePath("/eventos");
   revalidatePath("/insumos");
   revalidatePath("/");
   redirect(`/compras/${compra.id}`);

@@ -7,6 +7,7 @@ import type { CompraFormState } from "@/app/(app)/compras/actions";
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
 type ProveedorOption = { id: string; nombre: string };
+type EventoOption = { id: string; nombre: string; codigo: string | null; fecha: string };
 type InsumoOption = {
   id: string;
   nombre: string;
@@ -34,9 +35,13 @@ function SubmitButton() {
 export function CompraForm({
   proveedores,
   insumos,
+  eventos,
+  eventoIdInicial,
   action,
 }: {
   proveedores: ProveedorOption[];
+  eventos: EventoOption[];
+  eventoIdInicial?: string;
   insumos: InsumoOption[];
   action: (
     prevState: CompraFormState,
@@ -51,6 +56,21 @@ export function CompraForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5 px-4 py-4">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="evento_id" className={labelClasses}>
+          Evento
+        </label>
+        <select id="evento_id" name="evento_id" defaultValue={eventoIdInicial ?? ""} className={inputClasses}>
+          <option value="">Sin evento (compra general)</option>
+          {eventos.map((evento) => (
+            <option key={evento.id} value={evento.id}>
+              {evento.codigo ? `${evento.codigo} · ` : ""}
+              {evento.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex flex-col gap-2">
         <span className={labelClasses}>Proveedor</span>
         <div className="flex gap-2">

@@ -28,6 +28,11 @@ export function convertirUnidad(
   return (cantidad * origen.factor) / destino.factor;
 }
 
+// true si dos unidades se pueden convertir entre sí (g ↔ kg, ml ↔ l).
+export function mismaDimension(a: InsumoUnidad, b: InsumoUnidad): boolean {
+  return FACTOR_A_BASE[a].base === FACTOR_A_BASE[b].base;
+}
+
 // Pasa un precio expresado por `desde` (ej. ₲ por gramo) a precio por
 // `hacia` (ej. ₲ por kilo). null si las unidades no son compatibles.
 export function convertirPrecio(
