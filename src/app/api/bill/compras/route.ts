@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { claveProveedor, normalizarDescripcion } from "@/lib/compras/normalizar";
+import { crearCompraBorrador } from "@/lib/compras/borrador";
 import { confirmarCompra } from "@/lib/compras/registrar";
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
@@ -103,7 +103,6 @@ export async function POST(request: Request) {
         cantidad,
         unidad: aUnidad(linea.unidad),
         subtotal: subtotal ?? (precio ?? 0) * cantidad,
-        precio_unitario: precio ?? (subtotal ?? 0) / (cantidad || 1),
       };
     })
     .filter((linea) => linea.descripcion && linea.cantidad > 0 && linea.subtotal >= 0);
@@ -113,25 +112,6 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient();
-
-  // Una misma factura enviada dos veces no se duplica.
-  if (numeroFactura) {
-    let consulta = supabase
-      .from("compras")
-      .select("id, estado")
-      .eq("numero_factura", numeroFactura);
-    consulta = ruc ? consulta.eq("ruc_proveedor", ruc) : consulta;
-    const { data: existente } = await consulta.maybeSingle();
-    if (existente) {
-      return respuesta(200, {
-        ok: true,
-        duplicada: true,
-        compra_id: existente.id,
-        estado: existente.estado,
-        mensaje: "Esta factura ya estaba cargada.",
-      });
-    }
-  }
 
   let evento: { id: string; codigo: string | null; nombre: string } | null = null;
   if (eventoCodigo) {
@@ -147,75 +127,46 @@ export async function POST(request: Request) {
     ? await supabase.from("proveedores").select("id").ilike("nombre", proveedor).maybeSingle()
     : { data: null };
 
-  const total = aNumero(body.total) ?? lineas.reduce((acc, linea) => acc + linea.subtotal, 0);
-
-  const { data: compra, error: compraError } = await supabase
-    .from("compras")
-    .insert({
-      fecha,
-      numero_factura: numeroFactura,
-      proveedor_id: proveedorExistente?.id ?? null,
-      proveedor_texto: proveedor,
-      ruc_proveedor: ruc,
-      comprobante_url: texto(body.comprobante_url),
-      evento_id: evento?.id ?? null,
-      total,
-      estado: "borrador",
-      origen: "bill",
-    })
-    .select("id")
-    .single();
-
-  if (compraError || !compra) {
-    return respuesta(500, { ok: false, error: compraError?.message ?? "No se pudo crear la compra." });
-  }
-
-  // Lo que ya se conoce de este proveedor se asigna solo.
-  const clave = claveProveedor(ruc, proveedor);
-  const { data: alias } = await supabase
-    .from("alias_compras")
-    .select("descripcion_normalizada, destino, insumo_id, categoria_gasto, factor")
-    .eq("clave_proveedor", clave);
-  const aliasPorDescripcion = new Map(
-    (alias ?? []).map((fila) => [fila.descripcion_normalizada, fila]),
-  );
-
-  const filas = lineas.map((linea, i) => {
-    const conocido = aliasPorDescripcion.get(normalizarDescripcion(linea.descripcion));
-    return {
-      compra_id: compra.id,
-      orden: i,
-      ...linea,
-      destino: conocido?.destino ?? null,
-      insumo_id: conocido?.insumo_id ?? null,
-      categoria_gasto: conocido?.categoria_gasto ?? null,
-      factor: conocido?.factor ?? null,
-    };
+  const resultado = await crearCompraBorrador(supabase, {
+    origen: "bill",
+    fecha,
+    numeroFactura,
+    proveedorId: proveedorExistente?.id ?? null,
+    proveedorTexto: proveedor,
+    ruc,
+    eventoId: evento?.id ?? null,
+    comprobanteUrl: texto(body.comprobante_url),
+    total: aNumero(body.total),
+    lineas,
   });
 
-  const { error: lineasError } = await supabase.from("compra_lineas").insert(filas);
-  if (lineasError) {
-    await supabase.from("compras").delete().eq("id", compra.id);
-    return respuesta(500, { ok: false, error: lineasError.message });
+  if ("error" in resultado) return respuesta(500, { ok: false, error: resultado.error });
+  if (resultado.duplicada) {
+    return respuesta(200, {
+      ok: true,
+      duplicada: true,
+      compra_id: resultado.compraId,
+      estado: resultado.estado,
+      mensaje: "Esta factura ya estaba cargada.",
+    });
   }
 
-  const pendientes = filas.filter((fila) => !fila.destino).map((fila) => fila.descripcion);
+  const { compraId, pendientes } = resultado;
   let estado: "borrador" | "confirmada" = "borrador";
-
   if (pendientes.length === 0) {
-    const resultado = await confirmarCompra(supabase, compra.id);
-    if (!resultado.error) estado = "confirmada";
+    const confirmacion = await confirmarCompra(supabase, compraId);
+    if (!confirmacion.error) estado = "confirmada";
   }
 
   const base = process.env.APP_URL ?? "https://somosallium.com";
   return respuesta(201, {
     ok: true,
-    compra_id: compra.id,
+    compra_id: compraId,
     estado,
     evento: evento ? { codigo: evento.codigo, nombre: evento.nombre } : null,
     evento_no_encontrado: eventoCodigo && !evento ? eventoCodigo : null,
     pendientes,
-    url: `${base}/compras/${compra.id}`,
+    url: `${base}/compras/${compraId}`,
     mensaje:
       estado === "confirmada"
         ? `Compra registrada${evento ? ` en ${evento.codigo}` : ""}.`
