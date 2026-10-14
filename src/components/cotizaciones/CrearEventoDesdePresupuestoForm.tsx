@@ -1,36 +1,18 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
+import { ConfirmarAccion } from "@/components/ui/ConfirmarAccion";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+export function CrearEventoDesdePresupuestoForm({ action }: { action: () => Promise<void> }) {
+  const boton = "w-full rounded-lg bg-bordo-600 py-3 text-base font-medium text-white";
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-lg bg-bordo-600 py-3 text-base font-medium text-white disabled:opacity-60"
-    >
-      {pending ? "Creando evento..." : "Crear evento a partir de esta cotización"}
-    </button>
-  );
-}
-
-export function CrearEventoDesdePresupuestoForm({
-  action,
-}: {
-  action: () => Promise<void>;
-}) {
-  return (
-    <form
+    <ConfirmarAccion
       action={action}
-      onSubmit={(e) => {
-        const confirmado = window.confirm(
-          "¿Crear el evento a partir de esta cotización? Se va a crear el evento y su menú con las recetas cotizadas.",
-        );
-        if (!confirmado) e.preventDefault();
-      }}
-    >
-      <SubmitButton />
-    </form>
+      label="Crear evento a partir de esta cotización"
+      pregunta="Se va a crear el evento confirmado, con su menú a partir de las recetas cotizadas."
+      confirmar="Sí, crear el evento"
+      pendiente="Creando evento..."
+      className={boton}
+      claseConfirmar={boton}
+    />
   );
 }
