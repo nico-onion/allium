@@ -154,7 +154,6 @@ export default async function CotizacionDetallePage({
 
       <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-white p-4">
         <Campo label="Total a cobrar" value={formatGuaranies(totales.precioTotal)} />
-        <Campo label="Sin IVA" value={formatGuaranies(totales.precioSinIva)} />
         <Campo
           label={
             Number(presupuesto.pct_imprevistos) > 0

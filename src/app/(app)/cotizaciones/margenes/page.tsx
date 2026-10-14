@@ -23,7 +23,7 @@ export default async function MargenesPage() {
           Márgenes por tipo de evento
         </h1>
         <p className="text-sm text-zinc-500">
-          Se proponen al crear un presupuesto. El margen se mide sobre el precio sin IVA;
+          Se proponen al crear un presupuesto. Precios, costos y margen con IVA incluido;
           imprevistos suma un colchón al costo.
         </p>
       </div>

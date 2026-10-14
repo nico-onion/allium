@@ -403,7 +403,7 @@ export function PresupuestoForm({
         </div>
       </div>
       <span className="-mt-3 text-xs text-zinc-400">
-        Margen sobre el precio sin IVA. Imprevistos suma un colchón al costo; no se cobra
+        Precios, costos y margen con IVA incluido. Imprevistos suma un colchón al costo; no se cobra
         como línea aparte.
       </span>
 
@@ -423,10 +423,6 @@ export function PresupuestoForm({
           <span className="font-display text-lg font-semibold text-bordo-600">
             {formatGuaranies(totales.precioTotal)}
           </span>
-        </div>
-        <div className="flex justify-between text-zinc-500">
-          <span>Sin IVA</span>
-          <span>{formatGuaranies(totales.precioSinIva)}</span>
         </div>
         <div className="flex justify-between text-zinc-500">
           <span>

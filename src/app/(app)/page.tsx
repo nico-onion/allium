@@ -102,7 +102,7 @@ export default async function DashboardPage({
             <span className="text-sm text-zinc-500">Margen real</span>
             {metricasFinancieras.eventosConMargen > 0 && (
               <span className="block text-xs text-zinc-400">
-                sin IVA · {metricasFinancieras.eventosConMargen} evento
+                {metricasFinancieras.eventosConMargen} evento
                 {metricasFinancieras.eventosConMargen === 1 ? "" : "s"}
               </span>
             )}

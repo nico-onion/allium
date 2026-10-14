@@ -149,8 +149,8 @@ export function CicloEventoSeccion({
         <div>
           <Titulo>Ejecutado vs. presupuestado</Titulo>
           <p className="text-xs text-zinc-400">
-            Compras confirmadas del evento + gastos sin factura + staff. El margen
-            se mide sobre el precio sin IVA.
+            Compras confirmadas del evento + gastos sin factura + staff, todo con
+            IVA incluido.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-white p-4">

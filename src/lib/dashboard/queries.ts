@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { ESTADOS_ACTIVOS } from "@/lib/eventos/constants";
 import { calcularCostoReceta, type InsumoParaCosto } from "@/lib/recetas/costo";
-import { precioSinIva } from "@/lib/cotizaciones/margen";
 
 export type ResumenMes = {
   confirmados: number;
@@ -89,7 +88,7 @@ export type MetricasFinancierasMes = {
 // Ventas del mes: precio de los eventos realizados del mes.
 // Margen: el mismo criterio que la página del evento — costo real
 // (compras confirmadas del evento + gastos sin factura + staff) contra el
-// precio sin IVA, ponderado por venta. Para eventos sin compras cargadas se
+// precio, todo con IVA incluido, ponderado por venta. Para eventos sin compras cargadas se
 // usa, si existe, la orden de compra reconciliada (método anterior).
 export async function getMetricasFinancierasMes(
   supabase: SupabaseClient<Database>,
@@ -145,7 +144,7 @@ export async function getMetricasFinancierasMes(
     (gastos.data ?? []).map((g) => ({ evento_id: g.evento_id, monto: Number(g.monto) || 0 })),
   );
 
-  let ventasNetasElegibles = 0;
+  let ventasElegibles = 0;
   let costoRealElegibles = 0;
   let eventosConMargen = 0;
 
@@ -176,14 +175,14 @@ export async function getMetricasFinancierasMes(
       costoMercaderia = calcularCostoReceta(insumosParaCosto).costoTotal;
     }
 
-    ventasNetasElegibles += precioSinIva(precioTotal);
+    ventasElegibles += precioTotal;
     costoRealElegibles += costoMercaderia + costoStaff;
     eventosConMargen += 1;
   }
 
   const margenPromedio =
     eventosConMargen > 0
-      ? (ventasNetasElegibles - costoRealElegibles) / ventasNetasElegibles
+      ? (ventasElegibles - costoRealElegibles) / ventasElegibles
       : null;
 
   return { ventasDelMes, margenPromedio, eventosConMargen };

@@ -1,8 +1,5 @@
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
-// IVA incluido en el precio de venta de comidas (Paraguay, tasa general).
-export const IVA_TASA = 0.1;
-
 // Cada unidad se expresa como un factor respecto de una unidad "base" de su
 // misma dimensión (peso, volumen, o conteo). Dos unidades solo son
 // convertibles entre sí si comparten la misma base.
@@ -168,7 +165,7 @@ export type CostoCompleto = {
   // Insumos (también dentro de sub-recetas) con merma sin medir.
   mermasPendientes: string[];
   lineasSinCalcular: number;
-  precioNeto: number | null;
+  precioPorcion: number | null;
   foodCostPct: number | null;
   margenPorPorcion: number | null;
 };
@@ -272,10 +269,10 @@ export function calcularCostoCompleto(
   const costoTotal = costoInsumos + costoVarios;
   const costoPorPorcion = costoTotal / receta.porcion_base;
 
-  const precioNeto =
-    receta.precio_venta !== null ? Number(receta.precio_venta) / (1 + IVA_TASA) : null;
-  const foodCostPct = precioNeto ? costoPorPorcion / precioNeto : null;
-  const margenPorPorcion = precioNeto !== null ? precioNeto - costoPorPorcion : null;
+  // con IVA incluido, igual que el costo
+  const precioPorcion = receta.precio_venta !== null ? Number(receta.precio_venta) : null;
+  const foodCostPct = precioPorcion ? costoPorPorcion / precioPorcion : null;
+  const margenPorPorcion = precioPorcion !== null ? precioPorcion - costoPorPorcion : null;
 
   const resultado: CostoCompleto = {
     lineas,
@@ -285,7 +282,7 @@ export function calcularCostoCompleto(
     costoPorPorcion,
     mermasPendientes: [...mermasPendientes].sort((a, b) => a.localeCompare(b)),
     lineasSinCalcular,
-    precioNeto,
+    precioPorcion,
     foodCostPct,
     margenPorPorcion,
   };
