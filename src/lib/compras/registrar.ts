@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, InsumoUnidad } from "@/lib/supabase/database.types";
 import { convertirUnidad, costoPromedioPonderado } from "@/lib/recetas/costo";
+import { crearLote } from "@/lib/stock/movimientos";
 
 type Supabase = SupabaseClient<Database>;
 
@@ -30,6 +31,8 @@ export async function ingresarInsumoComprado(
     unidad: InsumoUnidad;
     subtotal: number;
     factor: number | null;
+    fechaVencimiento?: string | null;
+    compraLineaId?: string | null;
   },
 ): Promise<{ error?: string; sinConversion?: boolean }> {
   const { data: insumo, error: insumoError } = await supabase
@@ -51,9 +54,12 @@ export async function ingresarInsumoComprado(
 
   // Sin conversión posible se registra el movimiento tal cual, pero no se
   // tocan stock ni costo (mismo criterio que antes).
+  const precioPorUnidad =
+    cantidadInsumo !== null && cantidadInsumo > 0 ? linea.subtotal / cantidadInsumo : null;
   const { error: movError } = await supabase.from("movimientos_stock").insert({
     insumo_id: linea.insumoId,
     tipo: "compra",
+    costo_unitario: precioPorUnidad,
     cantidad: cantidadInsumo ?? linea.cantidad,
     unidad: cantidadInsumo !== null ? insumo.unidad : linea.unidad,
     compra_id: linea.compraId,
@@ -75,6 +81,14 @@ export async function ingresarInsumoComprado(
     .update({ stock_actual: stockPrevio + cantidadInsumo, costo_unitario: nuevoCosto })
     .eq("id", linea.insumoId);
   if (updateError) return { error: updateError.message };
+
+  const lote = await crearLote(supabase, {
+    insumoId: linea.insumoId,
+    cantidad: cantidadInsumo,
+    fechaVencimiento: linea.fechaVencimiento ?? null,
+    compraLineaId: linea.compraLineaId ?? null,
+  });
+  if (lote.error) return lote;
 
   if (nuevoCosto !== costoPrevio) {
     const { error: historialError } = await supabase.from("costo_historial").insert({
@@ -100,7 +114,7 @@ export async function confirmarCompra(
   const { data: compra, error: compraError } = await supabase
     .from("compras")
     .select(
-      "id, estado, evento_id, fecha, total, compra_lineas(id, descripcion, cantidad, unidad, subtotal, destino, insumo_id, factor, categoria_gasto)",
+      "id, estado, evento_id, fecha, total, compra_lineas(id, descripcion, cantidad, unidad, subtotal, destino, insumo_id, factor, categoria_gasto, fecha_vencimiento)",
     )
     .eq("id", compraId)
     .maybeSingle();
@@ -126,6 +140,8 @@ export async function confirmarCompra(
         unidad: linea.unidad,
         subtotal: Number(linea.subtotal),
         factor: linea.factor === null ? null : Number(linea.factor),
+        fechaVencimiento: linea.fecha_vencimiento,
+        compraLineaId: linea.id,
       });
       if (resultado.error) return { error: resultado.error };
       if (resultado.sinConversion) sinConversion.push(linea.descripcion);

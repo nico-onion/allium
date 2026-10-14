@@ -17,6 +17,7 @@ type Linea = {
   unidad: InsumoUnidad;
   subtotal: number;
   tasa_iva: number;
+  fecha_vencimiento: string | null;
   destino: "insumo" | "gasto" | null;
   insumo_id: string | null;
   factor: number | null;
@@ -189,6 +190,19 @@ function FilaLinea({
             </option>
           ))}
         </select>
+      )}
+
+      {modo !== "gasto" && (
+        <label className="flex items-center gap-2 text-xs text-zinc-600">
+          Vence el
+          <input
+            name={`vence_${linea.id}`}
+            type="date"
+            required
+            defaultValue={linea.fecha_vencimiento ?? ""}
+            className={`${inputClasses} w-40`}
+          />
+        </label>
       )}
 
       {necesitaFactor && unidadDestino && (

@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { ESTADOS_ACTIVOS } from "@/lib/eventos/constants";
-import { calcularCostoReceta, type InsumoParaCosto } from "@/lib/recetas/costo";
 
 export type ResumenMes = {
   confirmados: number;
@@ -86,10 +85,10 @@ export type MetricasFinancierasMes = {
 };
 
 // Ventas del mes: precio de los eventos realizados del mes.
-// Margen: el mismo criterio que la página del evento — costo real
-// (compras confirmadas del evento + gastos sin factura + staff) contra el
-// precio, todo con IVA incluido, ponderado por venta. Para eventos sin compras cargadas se
-// usa, si existe, la orden de compra reconciliada (método anterior).
+// Margen: el mismo criterio que la página del evento — lo que salió del
+// almacén para el evento (al costo del momento) + gastos + staff, contra el
+// precio, todo con IVA incluido, ponderado por venta. Solo cuentan los
+// eventos con algún costo de insumos o gastos cargado.
 export async function getMetricasFinancierasMes(
   supabase: SupabaseClient<Database>,
   inicioMes: string,
@@ -97,9 +96,7 @@ export async function getMetricasFinancierasMes(
 ): Promise<MetricasFinancierasMes> {
   const { data: eventos, error } = await supabase
     .from("eventos")
-    .select(
-      "id, precio_total, ordenes_compra(reconciliado, orden_compra_items(cantidad_usada, unidad, insumos(costo_unitario, unidad))), turnos(costo, costo_referencia)",
-    )
+    .select("id, precio_total, turnos(costo, costo_referencia)")
     .gte("fecha", inicioMes)
     .lt("fecha", finMes)
     .eq("estado", "realizado");
@@ -112,37 +109,29 @@ export async function getMetricasFinancierasMes(
   );
 
   const ids = eventos.map((evento) => evento.id);
-  const [compras, gastos] = ids.length
+  const [salidas, gastos] = ids.length
     ? await Promise.all([
         supabase
-          .from("compras")
-          .select("evento_id, total")
+          .from("movimientos_stock")
+          .select("evento_id, cantidad, costo_unitario, insumos(costo_unitario)")
           .in("evento_id", ids)
-          .eq("estado", "confirmada"),
-        supabase
-          .from("gastos_evento")
-          .select("evento_id, monto")
-          .in("evento_id", ids)
-          .is("compra_linea_id", null),
+          .eq("tipo", "uso_evento"),
+        supabase.from("gastos_evento").select("evento_id, monto").in("evento_id", ids),
       ])
     : [{ data: [], error: null }, { data: [], error: null }];
-  if (compras.error) throw new Error(compras.error.message);
+  if (salidas.error) throw new Error(salidas.error.message);
   if (gastos.error) throw new Error(gastos.error.message);
 
-  const sumarPorEvento = (filas: { evento_id: string | null; monto: number }[]) => {
-    const mapa = new Map<string, number>();
-    for (const fila of filas) {
-      if (!fila.evento_id) continue;
-      mapa.set(fila.evento_id, (mapa.get(fila.evento_id) ?? 0) + fila.monto);
-    }
-    return mapa;
+  const costoPorEvento = new Map<string, number>();
+  const sumar = (eventoId: string | null, monto: number) => {
+    if (!eventoId) return;
+    costoPorEvento.set(eventoId, (costoPorEvento.get(eventoId) ?? 0) + monto);
   };
-  const comprasPorEvento = sumarPorEvento(
-    (compras.data ?? []).map((c) => ({ evento_id: c.evento_id, monto: Number(c.total) || 0 })),
-  );
-  const gastosPorEvento = sumarPorEvento(
-    (gastos.data ?? []).map((g) => ({ evento_id: g.evento_id, monto: Number(g.monto) || 0 })),
-  );
+  for (const mov of salidas.data ?? []) {
+    const costo = Number(mov.costo_unitario ?? mov.insumos?.costo_unitario ?? 0);
+    sumar(mov.evento_id, Math.abs(Number(mov.cantidad)) * costo);
+  }
+  for (const gasto of gastos.data ?? []) sumar(gasto.evento_id, Number(gasto.monto) || 0);
 
   let ventasElegibles = 0;
   let costoRealElegibles = 0;
@@ -150,30 +139,13 @@ export async function getMetricasFinancierasMes(
 
   for (const evento of eventos) {
     const precioTotal = Number(evento.precio_total);
-    if (!precioTotal) continue;
+    const costoMercaderia = costoPorEvento.get(evento.id) ?? 0;
+    if (!precioTotal || costoMercaderia === 0) continue;
 
     const costoStaff = evento.turnos.reduce(
       (acumulado, turno) => acumulado + (Number(turno.costo ?? turno.costo_referencia) || 0),
       0,
     );
-
-    let costoMercaderia =
-      (comprasPorEvento.get(evento.id) ?? 0) + (gastosPorEvento.get(evento.id) ?? 0);
-
-    if (costoMercaderia === 0) {
-      const orden = evento.ordenes_compra;
-      if (!orden || !orden.reconciliado) continue;
-      const insumosParaCosto: InsumoParaCosto[] = orden.orden_compra_items
-        .filter((item) => item.cantidad_usada !== null)
-        .map((item) => ({
-          cantidad: Number(item.cantidad_usada),
-          unidad: item.unidad,
-          insumo: item.insumos
-            ? { costo_unitario: item.insumos.costo_unitario, unidad: item.insumos.unidad }
-            : null,
-        }));
-      costoMercaderia = calcularCostoReceta(insumosParaCosto).costoTotal;
-    }
 
     ventasElegibles += precioTotal;
     costoRealElegibles += costoMercaderia + costoStaff;
@@ -181,9 +153,7 @@ export async function getMetricasFinancierasMes(
   }
 
   const margenPromedio =
-    eventosConMargen > 0
-      ? (ventasElegibles - costoRealElegibles) / ventasElegibles
-      : null;
+    eventosConMargen > 0 ? (ventasElegibles - costoRealElegibles) / ventasElegibles : null;
 
   return { ventasDelMes, margenPromedio, eventosConMargen };
 }

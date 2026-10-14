@@ -11,6 +11,7 @@ export type LineaFactura = {
   unidad: InsumoUnidad;
   subtotal: number;
   tasaIva: TasaIva;
+  fechaVencimiento?: string | null;
 };
 
 export type DatosFactura = {
@@ -106,6 +107,7 @@ export async function crearCompraBorrador(
       unidad: linea.unidad,
       subtotal: linea.subtotal,
       tasa_iva: linea.tasaIva,
+      fecha_vencimiento: linea.fechaVencimiento ?? null,
       precio_unitario: Math.round((linea.subtotal / linea.cantidad) * 100) / 100,
       destino: conocido?.destino ?? null,
       insumo_id: conocido?.insumo_id ?? null,

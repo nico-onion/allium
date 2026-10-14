@@ -15,7 +15,8 @@ import type { InsumoUnidad } from "@/lib/supabase/database.types";
 //   "evento_codigo": "EV-OCT26-001", "comprobante_url": "https://drive.google.com/...",
 //   "lineas": [{ "descripcion": "LECHUGA COMUN X UN", "cantidad": 2,
 //                "unidad": "un", "precio_unitario": 3650, "subtotal": 7300,
-//                "tasa_iva": 5 }]   ← 0 (exenta), 5 o 10
+//                "tasa_iva": 5, "vencimiento": "2026-10-20" }]
+//   tasa_iva: 0 (exenta), 5 o 10 · vencimiento: opcional
 // }
 //
 // Las líneas que el sistema ya conoce para ese proveedor se asignan solas. Si
@@ -30,6 +31,7 @@ type LineaEntrada = {
   precio_unitario?: unknown;
   subtotal?: unknown;
   tasa_iva?: unknown;
+  vencimiento?: unknown;
 };
 
 const UNIDADES: Record<string, InsumoUnidad> = {
@@ -108,6 +110,10 @@ export async function POST(request: Request) {
         subtotal: subtotal ?? (precio ?? 0) * cantidad,
         // 0 (exenta), 5 o 10; si no viene, 10
         tasaIva: tasaIvaValida(texto(linea.tasa_iva)?.replace(/[^0-9]/g, "") ?? linea.tasa_iva ?? 10),
+        // AAAA-MM-DD si la etiqueta lo trae; si no, queda "sin fecha"
+        fechaVencimiento: /^\d{4}-\d{2}-\d{2}$/.test(texto(linea.vencimiento) ?? "")
+          ? texto(linea.vencimiento)
+          : null,
       };
     })
     .filter((linea) => linea.descripcion && linea.cantidad > 0 && linea.subtotal >= 0);

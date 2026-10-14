@@ -70,6 +70,12 @@ export function MovimientoStockForm({
           </label>
         </div>
       )}
+      {tipo === "ajuste" && (
+        <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          Vencimiento (si sumás stock)
+          <input name="fecha_vencimiento" type="date" className={inputClasses} />
+        </label>
+      )}
 
       <input
         name="nota"

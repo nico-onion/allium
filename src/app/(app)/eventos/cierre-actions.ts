@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getOrdenCompra } from "@/lib/ordenes-compra/queries";
 import { convertirUnidad } from "@/lib/recetas/costo";
+import { registrarSalida } from "@/lib/stock/movimientos";
 
 export type CierreFormState = { error?: string };
 
@@ -72,36 +73,16 @@ export async function reconciliarCierreEvento(
     if (error) return { error: error.message };
   }
 
-  // El stock nunca baja de 0: si se usó más de lo que había registrado,
-  // queda en 0 en vez de fallar por el CHECK (stock_actual >= 0) o quedar
-  // en negativo. El movimiento igual registra la deducción real, no la
-  // recortada, para no perder el dato de lo que efectivamente se usó.
   for (const [insumoId, deduccion] of deduccionesPorInsumo) {
-    const item = orden.items.find((i) => i.insumoId === insumoId);
-    if (!item) continue;
-    // Si se indicó "cantidad usada" 0, no hay nada que descontar ni que
-    // registrar (el CHECK de movimientos_stock exige cantidad < 0 para
-    // uso_evento).
+    // "cantidad usada" 0: no hay nada que descontar ni que registrar.
     if (deduccion <= 0) continue;
-
-    const { error: movimientoError } = await supabase.from("movimientos_stock").insert({
-      insumo_id: insumoId,
+    const resultado = await registrarSalida(supabase, {
+      insumoId,
+      cantidad: deduccion,
       tipo: "uso_evento",
-      cantidad: -deduccion,
-      unidad: item.insumoUnidad,
-      evento_id: eventoId,
+      eventoId,
     });
-
-    if (movimientoError) return { error: movimientoError.message };
-
-    const nuevoStock = Math.max(0, Number(item.insumoStockActual) - deduccion);
-
-    const { error } = await supabase
-      .from("insumos")
-      .update({ stock_actual: nuevoStock })
-      .eq("id", insumoId);
-
-    if (error) return { error: error.message };
+    if (resultado.error) return { error: resultado.error };
   }
 
   const { error: ordenError } = await supabase
