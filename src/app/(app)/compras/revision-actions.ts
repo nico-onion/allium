@@ -174,3 +174,28 @@ export async function descartarBorrador(compraId: string) {
   revalidatePath("/compras");
   redirect("/compras");
 }
+
+// La tasa de IVA de una compra ya confirmada se puede corregir: no toca
+// stock ni costos (que se llevan con IVA incluido), solo la liquidación.
+export async function actualizarIvaCompra(compraId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: lineas, error } = await supabase
+    .from("compra_lineas")
+    .select("id, tasa_iva")
+    .eq("compra_id", compraId);
+  if (error) throw new Error(error.message);
+
+  for (const linea of lineas) {
+    const valor = formData.get(`iva_${linea.id}`);
+    if (valor === null) continue;
+    const tasa = tasaIvaValida(valor);
+    if (tasa === linea.tasa_iva) continue;
+    const { error: updateError } = await supabase
+      .from("compra_lineas")
+      .update({ tasa_iva: tasa })
+      .eq("id", linea.id);
+    if (updateError) throw new Error(updateError.message);
+  }
+
+  revalidatePath(`/compras/${compraId}`);
+}
