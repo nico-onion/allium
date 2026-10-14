@@ -5,6 +5,7 @@ import { getCompra } from "@/lib/compras/queries";
 import { getEventosParaSelector } from "@/lib/eventos/queries";
 import { GASTO_CATEGORIA_LABELS } from "@/lib/compras/constants";
 import { categoriaGastoValida } from "@/lib/compras/registrar";
+import { TASA_IVA_LABELS, liquidacionIva, tasaIvaValida } from "@/lib/compras/iva";
 import { UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import { formatCantidad, formatFechaCorta, formatGuaranies } from "@/lib/format";
 import { ItemsCompraTable } from "@/components/compras/ItemsCompraTable";
@@ -23,6 +24,7 @@ export default async function CompraDetallePage({
   if (!compra) notFound();
 
   const esBorrador = compra.estado === "borrador";
+  const iva = liquidacionIva(compra.lineas);
 
   const [insumos, eventos] = esBorrador
     ? await Promise.all([
@@ -102,12 +104,29 @@ export default async function CompraDetallePage({
                       {linea.destino === "gasto"
                         ? `gasto: ${GASTO_CATEGORIA_LABELS[categoriaGastoValida(linea.categoria_gasto)]}`
                         : `insumo: ${linea.insumos?.nombre ?? "-"}`}
+                      {` · IVA ${TASA_IVA_LABELS[tasaIvaValida(linea.tasa_iva)]}`}
                     </span>
                   </span>
                   <span className="text-zinc-700">{formatGuaranies(linea.subtotal)}</span>
                 </li>
               ))}
             </ul>
+          )}
+          {compra.lineas.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+              <div className="flex flex-col">
+                <span className="text-xs text-zinc-400">IVA 10 %</span>
+                <span>{formatGuaranies(iva.iva10)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-zinc-400">IVA 5 %</span>
+                <span>{formatGuaranies(iva.iva5)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-zinc-400">Exentas</span>
+                <span>{formatGuaranies(iva.exentas)}</span>
+              </div>
+            </div>
           )}
           {compra.items.length > 0 && (
             <ItemsCompraTable items={compra.items} compraId={compra.id} />

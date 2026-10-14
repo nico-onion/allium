@@ -32,7 +32,7 @@ export async function getCompra(supabase: SupabaseClient<Database>, id: string) 
   const { data: compra, error } = await supabase
     .from("compras")
     .select(
-      "id, fecha, numero_factura, estado, origen, total, proveedor_texto, ruc_proveedor, comprobante_url, evento_id, proveedores(nombre), eventos(id, codigo, nombre), compra_lineas(id, orden, descripcion, cantidad, unidad, precio_unitario, subtotal, destino, insumo_id, factor, categoria_gasto, insumos(nombre, unidad))",
+      "id, fecha, numero_factura, estado, origen, total, proveedor_texto, ruc_proveedor, comprobante_url, evento_id, proveedores(nombre), eventos(id, codigo, nombre), compra_lineas(id, orden, descripcion, cantidad, unidad, precio_unitario, subtotal, tasa_iva, destino, insumo_id, factor, categoria_gasto, insumos(nombre, unidad))",
     )
     .eq("id", id)
     .maybeSingle();

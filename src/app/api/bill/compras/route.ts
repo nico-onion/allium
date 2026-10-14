@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearCompraBorrador } from "@/lib/compras/borrador";
+import { tasaIvaValida } from "@/lib/compras/iva";
 import { confirmarCompra } from "@/lib/compras/registrar";
 import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
@@ -13,7 +14,8 @@ import type { InsumoUnidad } from "@/lib/supabase/database.types";
 //   "numero_factura": "007-011-0331144", "fecha": "2026-10-11", "total": 265013,
 //   "evento_codigo": "EV-OCT26-001", "comprobante_url": "https://drive.google.com/...",
 //   "lineas": [{ "descripcion": "LECHUGA COMUN X UN", "cantidad": 2,
-//                "unidad": "un", "precio_unitario": 3650, "subtotal": 7300 }]
+//                "unidad": "un", "precio_unitario": 3650, "subtotal": 7300,
+//                "tasa_iva": 5 }]   ← 0 (exenta), 5 o 10
 // }
 //
 // Las líneas que el sistema ya conoce para ese proveedor se asignan solas. Si
@@ -27,6 +29,7 @@ type LineaEntrada = {
   unidad?: unknown;
   precio_unitario?: unknown;
   subtotal?: unknown;
+  tasa_iva?: unknown;
 };
 
 const UNIDADES: Record<string, InsumoUnidad> = {
@@ -103,6 +106,8 @@ export async function POST(request: Request) {
         cantidad,
         unidad: aUnidad(linea.unidad),
         subtotal: subtotal ?? (precio ?? 0) * cantidad,
+        // 0 (exenta), 5 o 10; si no viene, 10
+        tasaIva: tasaIvaValida(texto(linea.tasa_iva)?.replace(/[^0-9]/g, "") ?? linea.tasa_iva ?? 10),
       };
     })
     .filter((linea) => linea.descripcion && linea.cantidad > 0 && linea.subtotal >= 0);
