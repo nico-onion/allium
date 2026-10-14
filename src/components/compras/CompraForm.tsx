@@ -2,18 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ItemsCompraFields } from "@/components/compras/ItemsCompraFields";
+import { LineasFacturaFields } from "@/components/compras/LineasFacturaFields";
 import type { CompraFormState } from "@/app/(app)/compras/actions";
-import type { InsumoUnidad } from "@/lib/supabase/database.types";
 
 type ProveedorOption = { id: string; nombre: string };
 type EventoOption = { id: string; nombre: string; codigo: string | null; fecha: string };
-type InsumoOption = {
-  id: string;
-  nombre: string;
-  unidad: InsumoUnidad;
-  costo_unitario: number;
-};
 
 const inputClasses =
   "rounded-lg border border-zinc-200 bg-white px-4 py-3 text-base text-zinc-900 focus:border-fucsia-400 focus:outline-none";
@@ -27,14 +20,13 @@ function SubmitButton() {
       disabled={pending}
       className="w-full rounded-lg bg-fucsia-600 py-3 text-base font-medium text-white disabled:opacity-60"
     >
-      {pending ? "Guardando..." : "Crear compra"}
+      {pending ? "Guardando..." : "Siguiente: revisar renglones"}
     </button>
   );
 }
 
 export function CompraForm({
   proveedores,
-  insumos,
   eventos,
   eventoIdInicial,
   action,
@@ -42,7 +34,6 @@ export function CompraForm({
   proveedores: ProveedorOption[];
   eventos: EventoOption[];
   eventoIdInicial?: string;
-  insumos: InsumoOption[];
   action: (
     prevState: CompraFormState,
     formData: FormData,
@@ -52,7 +43,7 @@ export function CompraForm({
   const [modoProveedor, setModoProveedor] = useState<"existente" | "nuevo">(
     proveedores.length > 0 ? "existente" : "nuevo",
   );
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Asuncion" }).format(new Date());
 
   return (
     <form action={formAction} className="flex flex-col gap-5 px-4 py-4">
@@ -159,7 +150,33 @@ export function CompraForm({
         </div>
       </div>
 
-      <ItemsCompraFields insumos={insumos} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="ruc_proveedor" className={labelClasses}>
+            RUC del proveedor
+          </label>
+          <input
+            id="ruc_proveedor"
+            name="ruc_proveedor"
+            placeholder="Ej. 80012345-6"
+            className={inputClasses}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="total" className={labelClasses}>
+            Total de la factura
+          </label>
+          <input
+            id="total"
+            name="total"
+            inputMode="numeric"
+            placeholder="Gs."
+            className={inputClasses}
+          />
+        </div>
+      </div>
+
+      <LineasFacturaFields />
 
       {state.error && (
         <p role="alert" className="text-sm text-red-600">
