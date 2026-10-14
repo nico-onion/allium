@@ -61,8 +61,20 @@ export async function resolverYConfirmarCompra(
     const factorIngresado = leerFactor(formData.get(`factor_${linea.id}`));
 
     let cambios:
-      | { destino: "insumo"; insumo_id: string; factor: number | null; categoria_gasto: null }
-      | { destino: "gasto"; insumo_id: null; factor: null; categoria_gasto: string };
+      | {
+          destino: "insumo";
+          insumo_id: string;
+          factor: number | null;
+          categoria_gasto: null;
+          fecha_vencimiento: string;
+        }
+      | {
+          destino: "gasto";
+          insumo_id: null;
+          factor: null;
+          categoria_gasto: string;
+          fecha_vencimiento: null;
+        };
 
     if (modo === "gasto") {
       cambios = {
@@ -70,6 +82,7 @@ export async function resolverYConfirmarCompra(
         insumo_id: null,
         factor: null,
         categoria_gasto: categoriaGastoValida(formData.get(`gasto_${linea.id}`) as string),
+        fecha_vencimiento: null,
       };
     } else {
       let insumoId: string;
@@ -113,11 +126,17 @@ export async function resolverYConfirmarCompra(
         };
       }
 
+      const vence = String(formData.get(`vence_${linea.id}`) ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(vence)) {
+        return { error: `Poné la fecha de vencimiento de "${linea.descripcion}".` };
+      }
+
       cambios = {
         destino: "insumo",
         insumo_id: insumoId,
         factor: necesitaFactor ? factorIngresado : null,
         categoria_gasto: null,
+        fecha_vencimiento: vence,
       };
     }
 
@@ -132,7 +151,10 @@ export async function resolverYConfirmarCompra(
         {
           clave_proveedor: clave,
           descripcion_normalizada: normalizarDescripcion(linea.descripcion),
-          ...cambios,
+          destino: cambios.destino,
+          insumo_id: cambios.insumo_id,
+          factor: cambios.factor,
+          categoria_gasto: cambios.categoria_gasto,
         },
         { onConflict: "clave_proveedor,descripcion_normalizada" },
       );

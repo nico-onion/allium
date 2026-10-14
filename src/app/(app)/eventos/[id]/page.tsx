@@ -63,6 +63,7 @@ import {
   registrarGastoEvento,
 } from "../ciclo-actions";
 import { getCicloEvento, resumenCiclo } from "@/lib/eventos/ciclo";
+import { anularSalida } from "../salida-actions";
 import { CicloEventoSeccion } from "@/components/eventos/CicloEventoSeccion";
 import { CopiarCodigo } from "@/components/eventos/CicloForms";
 import type { EventoEstado } from "@/lib/supabase/database.types";
@@ -366,6 +367,7 @@ export default async function EventoDetallePage({
           eliminarFactura: (facturaId) => eliminarFacturaVenta.bind(null, evento.id, facturaId),
           registrarGasto: registrarGastoEvento.bind(null, evento.id),
           eliminarGasto: (gastoId) => eliminarGastoEvento.bind(null, evento.id, gastoId),
+          anularSalida: (movimientoId) => anularSalida.bind(null, evento.id, movimientoId),
           enviarResena: enviarResena.bind(null, evento.id),
           cerrar: cerrarEventoCiclo.bind(null, evento.id),
           reabrir: reabrirEvento.bind(null, evento.id),

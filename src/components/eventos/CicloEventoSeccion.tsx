@@ -2,7 +2,8 @@ import Link from "next/link";
 import { GASTO_CATEGORIA_LABELS } from "@/lib/compras/constants";
 import { categoriaGastoValida } from "@/lib/compras/registrar";
 import type { CicloEvento, resumenCiclo } from "@/lib/eventos/ciclo";
-import { formatFechaCorta, formatGuaranies } from "@/lib/format";
+import { formatCantidad, formatFechaCorta, formatGuaranies } from "@/lib/format";
+import { UNIDAD_LABELS_CORTAS } from "@/lib/insumos/constants";
 import {
   CerrarEventoForm,
   CobroForm,
@@ -79,6 +80,7 @@ export function CicloEventoSeccion({
     eliminarFactura: (id: string) => () => Promise<void>;
     registrarGasto: Action;
     eliminarGasto: (id: string) => () => Promise<void>;
+    anularSalida: (id: string) => () => Promise<void>;
     enviarResena: () => Promise<void>;
     cerrar: Action;
     reabrir: () => Promise<void>;
@@ -149,8 +151,8 @@ export function CicloEventoSeccion({
         <div>
           <Titulo>Ejecutado vs. presupuestado</Titulo>
           <p className="text-xs text-zinc-400">
-            Compras confirmadas del evento + gastos sin factura + staff, todo con
-            IVA incluido.
+            Insumos que salieron del almacén (al costo promedio) + gastos + staff,
+            todo con IVA incluido.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-white p-4">
@@ -164,9 +166,9 @@ export function CicloEventoSeccion({
                 : undefined
             }
           />
-          <Dato label="Compras" valor={formatGuaranies(ciclo.totales.compras)} />
+          <Dato label="Insumos" valor={formatGuaranies(ciclo.totales.salidas)} />
           <Dato label="Staff" valor={formatGuaranies(ciclo.totales.manoDeObra)} />
-          <Dato label="Otros gastos" valor={formatGuaranies(ciclo.totales.gastos)} />
+          <Dato label="Gastos" valor={formatGuaranies(ciclo.totales.gastos)} />
           <Dato
             label="Margen real"
             valor={
@@ -178,6 +180,38 @@ export function CicloEventoSeccion({
           />
         </div>
 
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-zinc-600">Salida de almacén</span>
+          {ciclo.salidas.length === 0 ? (
+            <p className="text-sm text-zinc-400">
+              Todavía no salió nada del almacén para este evento.
+            </p>
+          ) : (
+            <ul className="flex flex-col rounded-xl border border-zinc-200 bg-white">
+              {ciclo.salidas.map((salida) => (
+                <Fila
+                  key={salida.id}
+                  izquierda={salida.insumoNombre}
+                  detalle={`${formatCantidad(salida.cantidad)} ${UNIDAD_LABELS_CORTAS[salida.unidad]} · ${formatGuaranies(Math.round(salida.costoUnitario))} c/u`}
+                  monto={salida.valor}
+                  eliminar={cerrado ? undefined : acciones.anularSalida(salida.id)}
+                />
+              ))}
+            </ul>
+          )}
+          <Link
+            href={`/eventos/${eventoId}/salida`}
+            className="w-full rounded-lg border border-dashed border-zinc-300 py-2 text-center text-sm text-zinc-600"
+          >
+            + Registrar salida de almacén
+          </Link>
+        </div>
+
+        {ciclo.compras.length > 0 && (
+          <span className="text-sm font-medium text-zinc-600">
+            Compras para este evento <span className="font-normal text-zinc-400">(entran al almacén)</span>
+          </span>
+        )}
         {ciclo.compras.length > 0 && (
           <ul className="flex flex-col rounded-xl border border-zinc-200 bg-white">
             {ciclo.compras.map((compra) => (
@@ -214,9 +248,9 @@ export function CicloEventoSeccion({
               <Fila
                 key={gasto.id}
                 izquierda={gasto.descripcion}
-                detalle={`${GASTO_CATEGORIA_LABELS[categoriaGastoValida(gasto.categoria)]} · ${formatFechaCorta(gasto.fecha)}`}
+                detalle={`${GASTO_CATEGORIA_LABELS[categoriaGastoValida(gasto.categoria)]} · ${formatFechaCorta(gasto.fecha)}${gasto.deFactura ? " · de factura" : ""}`}
                 monto={gasto.monto}
-                eliminar={cerrado ? undefined : acciones.eliminarGasto(gasto.id)}
+                eliminar={cerrado || gasto.deFactura ? undefined : acciones.eliminarGasto(gasto.id)}
               />
             ))}
           </ul>

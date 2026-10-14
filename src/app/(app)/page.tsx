@@ -14,6 +14,7 @@ import {
 import { SelectorMes } from "@/components/dashboard/SelectorMes";
 import { getCantidadDiscrepancias, getInsumos } from "@/lib/insumos/queries";
 import { estaBajoStockMinimo } from "@/lib/insumos/categorias";
+import { getResumenVencimientos } from "@/lib/stock/vencimientos";
 import { formatFecha, formatGuaranies } from "@/lib/format";
 
 const RANGO_MESES = 12;
@@ -41,14 +42,16 @@ export default async function DashboardPage({
   const inicioMes = limite(mesSeleccionado.year, mesSeleccionado.month);
   const finMes = limite(mesSeleccionado.year, mesSeleccionado.month + 1);
 
-  const [resumenMes, metricasFinancieras, proximoEvento, insumos, cantidadDiscrepancias] =
+  const [resumenMes, metricasFinancieras, proximoEvento, insumos, cantidadDiscrepancias, vencimientos] =
     await Promise.all([
       getResumenMes(supabase, inicioMes, finMes),
       getMetricasFinancierasMes(supabase, inicioMes, finMes),
       getProximoEvento(supabase, ahora.toISOString()),
       getInsumos(supabase),
       getCantidadDiscrepancias(supabase),
+      getResumenVencimientos(supabase),
     ]);
+  const alertasVencimiento = vencimientos.vencidos + vencimientos.porVencer;
 
   const insumosEnAlerta = insumos.filter(estaBajoStockMinimo).length;
   const opcionesMes = generarOpcionesMes(mesActual, RANGO_MESES);
@@ -185,6 +188,25 @@ export default async function DashboardPage({
             }`}
           >
             {insumosEnAlerta}
+          </span>
+        </Link>
+
+        <Link
+          href="/insumos/vencimientos"
+          className={`flex items-center justify-between rounded-xl border p-4 active:bg-zinc-50 ${
+            alertasVencimiento > 0 ? "border-red-200 bg-red-50" : "border-zinc-200 bg-white"
+          }`}
+        >
+          <span className={`flex flex-col text-sm ${alertasVencimiento > 0 ? "text-red-700" : "text-zinc-500"}`}>
+            Vencidos o por vencer
+            {vencimientos.sinFecha > 0 && (
+              <span className="text-xs text-zinc-500">{vencimientos.sinFecha} lote(s) sin fecha</span>
+            )}
+          </span>
+          <span
+            className={`text-2xl font-semibold ${alertasVencimiento > 0 ? "text-red-700" : "text-zinc-400"}`}
+          >
+            {alertasVencimiento}
           </span>
         </Link>
 

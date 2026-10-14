@@ -662,6 +662,7 @@ export interface Database {
           nota: string | null;
           verificado: boolean;
           nota_verificacion: string | null;
+          costo_unitario: number | null;
           created_at: string;
         };
         Insert: {
@@ -675,6 +676,7 @@ export interface Database {
           nota?: string | null;
           verificado?: boolean;
           nota_verificacion?: string | null;
+          costo_unitario?: number | null;
           created_at?: string;
         };
         Update: {
@@ -688,6 +690,7 @@ export interface Database {
           nota?: string | null;
           verificado?: boolean;
           nota_verificacion?: string | null;
+          costo_unitario?: number | null;
           created_at?: string;
         };
         Relationships: [
@@ -1156,6 +1159,50 @@ export interface Database {
           },
         ];
       };
+      lotes_stock: {
+        Row: {
+          id: string;
+          insumo_id: string;
+          compra_linea_id: string | null;
+          fecha_ingreso: string;
+          fecha_vencimiento: string | null;
+          cantidad_inicial: number;
+          cantidad_restante: number;
+          nota: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          insumo_id: string;
+          compra_linea_id?: string | null;
+          fecha_ingreso?: string;
+          fecha_vencimiento?: string | null;
+          cantidad_inicial: number;
+          cantidad_restante: number;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          insumo_id?: string;
+          compra_linea_id?: string | null;
+          fecha_ingreso?: string;
+          fecha_vencimiento?: string | null;
+          cantidad_inicial?: number;
+          cantidad_restante?: number;
+          nota?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lotes_stock_insumo_id_fkey";
+            columns: ["insumo_id"];
+            isOneToOne: false;
+            referencedRelation: "insumos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       compra_lineas: {
         Row: {
           id: string;
@@ -1170,6 +1217,7 @@ export interface Database {
           insumo_id: string | null;
           factor: number | null;
           tasa_iva: number;
+          fecha_vencimiento: string | null;
           categoria_gasto: string | null;
           created_at: string;
         };
@@ -1186,6 +1234,7 @@ export interface Database {
           insumo_id?: string | null;
           factor?: number | null;
           tasa_iva?: number;
+          fecha_vencimiento?: string | null;
           categoria_gasto?: string | null;
           created_at?: string;
         };
@@ -1202,6 +1251,7 @@ export interface Database {
           insumo_id?: string | null;
           factor?: number | null;
           tasa_iva?: number;
+          fecha_vencimiento?: string | null;
           categoria_gasto?: string | null;
           created_at?: string;
         };

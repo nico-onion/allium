@@ -1,15 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { margenPct } from "@/lib/cotizaciones/margen";
+import { getSalidasEvento } from "@/lib/stock/salidas";
 
 type Supabase = SupabaseClient<Database>;
 
 export const LINK_RESENA_GOOGLE = "https://g.page/r/CRjpfbCbMsgsEAI/review";
 
 // Lo que pasa con la plata de un evento, del presupuesto al cierre: cobros,
-// factura, compras y gastos (ejecutado) contra lo cotizado.
+// factura y ejecutado contra lo cotizado. Las compras entran al almacén;
+// lo que le cuesta al evento es lo que sale del almacén para él
+// (valorizado al costo promedio), más los gastos (carbón, flete…, de
+// factura o sin ella) y el staff.
 export async function getCicloEvento(supabase: Supabase, eventoId: string) {
-  const [cobros, facturas, compras, gastos, turnos] = await Promise.all([
+  const [cobros, facturas, compras, gastos, turnos, salidas] = await Promise.all([
     supabase
       .from("cobros")
       .select("id, tipo, monto, fecha, medio, comprobante, nota")
@@ -25,15 +29,13 @@ export async function getCicloEvento(supabase: Supabase, eventoId: string) {
       .select("id, fecha, estado, origen, total, numero_factura, proveedor_texto, proveedores(nombre)")
       .eq("evento_id", eventoId)
       .order("fecha"),
-    // Solo los cargados a mano: los que vienen de una factura ya están en el
-    // total de esa compra.
     supabase
       .from("gastos_evento")
-      .select("id, fecha, categoria, descripcion, monto")
+      .select("id, fecha, categoria, descripcion, monto, compra_linea_id")
       .eq("evento_id", eventoId)
-      .is("compra_linea_id", null)
       .order("fecha"),
     supabase.from("turnos").select("costo, costo_referencia").eq("evento_id", eventoId),
+    getSalidasEvento(supabase, eventoId),
   ]);
 
   for (const resultado of [cobros, facturas, compras, gastos, turnos]) {
@@ -52,7 +54,12 @@ export async function getCicloEvento(supabase: Supabase, eventoId: string) {
       proveedor: c.proveedores?.nombre ?? c.proveedor_texto ?? "Sin proveedor",
       total: c.total === null ? 0 : Number(c.total),
     })),
-    gastos: (gastos.data ?? []).map((g) => ({ ...g, monto: Number(g.monto) })),
+    gastos: (gastos.data ?? []).map((g) => ({
+      ...g,
+      monto: Number(g.monto),
+      deFactura: g.compra_linea_id !== null,
+    })),
+    salidas,
   };
 
   const sum = (valores: number[]) => valores.reduce((acc, v) => acc + v, 0);
@@ -69,6 +76,7 @@ export async function getCicloEvento(supabase: Supabase, eventoId: string) {
       cobrado: sum(lista.cobros.map((c) => c.monto)),
       facturado: sum(lista.facturas.map((f) => f.monto)),
       compras: sum(comprasConfirmadas.map((c) => c.total)),
+      salidas: sum(salidas.map((s) => s.valor)),
       gastos: sum(lista.gastos.map((g) => g.monto)),
       manoDeObra,
       borradores: lista.compras.length - comprasConfirmadas.length,
@@ -87,8 +95,8 @@ export function resumenCiclo(
   },
 ) {
   const precio = evento.precio_total === null ? null : Number(evento.precio_total);
-  const { cobrado, facturado, compras, gastos, manoDeObra, borradores } = ciclo.totales;
-  const ejecutado = compras + gastos + manoDeObra;
+  const { cobrado, facturado, salidas, gastos, manoDeObra, borradores } = ciclo.totales;
+  const ejecutado = salidas + gastos + manoDeObra;
 
   const checklist = [
     {
@@ -102,6 +110,11 @@ export function resumenCiclo(
       ok: precio !== null && precio > 0 && facturado >= precio,
     },
     { clave: "compras", label: "Sin compras por revisar", ok: borradores === 0 },
+    {
+      clave: "salida",
+      label: "Salida de almacén registrada",
+      ok: ciclo.salidas.length > 0,
+    },
     { clave: "resena", label: "Link de reseña enviado", ok: evento.resena_enviada_en !== null },
   ];
 
