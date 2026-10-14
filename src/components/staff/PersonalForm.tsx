@@ -10,6 +10,7 @@ export type PersonalFormValues = {
   nombre: string;
   rol: PersonalRol;
   telefono: string | null;
+  costo_referencia: number | null;
 };
 
 const inputClasses =
@@ -91,6 +92,25 @@ export function PersonalForm({
           defaultValue={defaultValues?.telefono ?? ""}
           className={inputClasses}
         />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="costo_referencia" className={labelClasses}>
+          Costo de referencia por evento (Gs.)
+        </label>
+        <input
+          id="costo_referencia"
+          name="costo_referencia"
+          type="number"
+          min={0}
+          step="1"
+          placeholder="Ej. 250000"
+          defaultValue={defaultValues?.costo_referencia ?? ""}
+          className={inputClasses}
+        />
+        <span className="text-xs text-zinc-400">
+          Se propone al asignarla a un evento; ahí podés cargar lo que se acordó.
+        </span>
       </div>
 
       {state.error && (

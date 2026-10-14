@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ROL_LABELS } from "@/lib/staff/constants";
+import { formatGuaranies } from "@/lib/format";
 import type { PersonalRol } from "@/lib/supabase/database.types";
 
 export type PersonalParaLista = {
@@ -7,6 +8,7 @@ export type PersonalParaLista = {
   nombre: string;
   rol: PersonalRol;
   telefono: string | null;
+  costoReferencia: number | null;
   cantidadEventos: number;
 };
 
@@ -24,6 +26,11 @@ export function PersonalCard({ persona }: { persona: PersonalParaLista }) {
       </div>
       {persona.telefono && (
         <span className="text-sm text-zinc-500">{persona.telefono}</span>
+      )}
+      {persona.costoReferencia !== null && (
+        <span className="text-sm text-zinc-500">
+          Referencia: {formatGuaranies(persona.costoReferencia)} por evento
+        </span>
       )}
       <span className="text-xs text-zinc-400">
         {persona.cantidadEventos} evento

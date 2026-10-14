@@ -8,6 +8,13 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type TurnoFormState = { error?: string; warning?: string };
 
+function leerMonto(valor: FormDataEntryValue | null): number | null {
+  const texto = (valor as string | null)?.trim().replace(/\./g, "");
+  if (!texto) return null;
+  const monto = Number(texto);
+  return Number.isFinite(monto) && monto >= 0 ? monto : null;
+}
+
 // Busca si esa persona ya tiene un turno asignado en OTRO evento el mismo
 // día (comparando por fecha calendario, no timestamp exacto) — es una
 // advertencia, no un bloqueo: el usuario puede confirmar igual.
@@ -40,7 +47,7 @@ export async function asignarPersonalAEvento(
 ): Promise<TurnoFormState> {
   const personalId = formData.get("personal_id") as string;
   const rolEnEvento = (formData.get("rol_en_evento") as string)?.trim();
-  const costoRaw = formData.get("costo") as string;
+  const costoIngresado = leerMonto(formData.get("costo"));
   const forzar = formData.get("forzar") === "true";
 
   if (!personalId) return { error: "Seleccioná una persona." };
@@ -73,11 +80,28 @@ export async function asignarPersonalAEvento(
     }
   }
 
+  // Se guarda la referencia vigente de la persona como foto, para comparar
+  // después con lo acordado aunque la referencia cambie más adelante. Si no
+  // se cargó un costo, se asume la referencia.
+  const { data: persona, error: personaError } = await supabase
+    .from("personal")
+    .select("costo_referencia")
+    .eq("id", personalId)
+    .maybeSingle();
+
+  if (personaError || !persona) {
+    return { error: personaError?.message ?? "No se encontró la persona." };
+  }
+
+  const costoReferencia =
+    persona.costo_referencia === null ? null : Number(persona.costo_referencia);
+
   const { error } = await supabase.from("turnos").insert({
     evento_id: eventoId,
     personal_id: personalId,
     rol_en_evento: rolEnEvento,
-    costo: costoRaw ? Number(costoRaw) : null,
+    costo: costoIngresado ?? costoReferencia,
+    costo_referencia: costoReferencia,
   });
 
   if (error) return { error: error.message };
@@ -107,6 +131,23 @@ export async function toggleConfirmadoTurno(eventoId: string, turnoId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath(`/eventos/${eventoId}`);
+}
+
+// Lo que se acordó finalmente con la persona para este evento (ej. la
+// referencia era 250.000 y se negoció 200.000).
+export async function actualizarCostoTurno(
+  eventoId: string,
+  turnoId: string,
+  formData: FormData,
+) {
+  const costo = leerMonto(formData.get("costo"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("turnos").update({ costo }).eq("id", turnoId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/eventos/${eventoId}`);
+  revalidatePath("/");
 }
 
 export async function eliminarTurno(eventoId: string, turnoId: string) {

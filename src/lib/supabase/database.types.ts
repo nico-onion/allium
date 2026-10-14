@@ -390,6 +390,7 @@ export interface Database {
           nombre: string;
           rol: PersonalRol;
           telefono: string | null;
+          costo_referencia: number | null;
           auth_user_id: string | null;
           created_at: string;
           updated_at: string;
@@ -399,6 +400,7 @@ export interface Database {
           nombre: string;
           rol: PersonalRol;
           telefono?: string | null;
+          costo_referencia?: number | null;
           auth_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -408,6 +410,7 @@ export interface Database {
           nombre?: string;
           rol?: PersonalRol;
           telefono?: string | null;
+          costo_referencia?: number | null;
           auth_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -421,6 +424,7 @@ export interface Database {
           personal_id: string;
           rol_en_evento: string;
           costo: number | null;
+          costo_referencia: number | null;
           confirmado: boolean;
           created_at: string;
           updated_at: string;
@@ -431,6 +435,7 @@ export interface Database {
           personal_id: string;
           rol_en_evento: string;
           costo?: number | null;
+          costo_referencia?: number | null;
           confirmado?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -441,6 +446,7 @@ export interface Database {
           personal_id?: string;
           rol_en_evento?: string;
           costo?: number | null;
+          costo_referencia?: number | null;
           confirmado?: boolean;
           created_at?: string;
           updated_at?: string;

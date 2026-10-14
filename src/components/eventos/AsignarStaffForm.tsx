@@ -1,12 +1,18 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ROL_LABELS } from "@/lib/staff/constants";
+import { formatGuaranies } from "@/lib/format";
 import type { TurnoFormState } from "@/app/(app)/eventos/turnos-actions";
 import type { PersonalRol } from "@/lib/supabase/database.types";
 
-type PersonalOption = { id: string; nombre: string; rol: PersonalRol };
+type PersonalOption = {
+  id: string;
+  nombre: string;
+  rol: PersonalRol;
+  costo_referencia: number | null;
+};
 
 const inputClasses =
   "rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-fucsia-400 focus:outline-none";
@@ -36,6 +42,10 @@ export function AsignarStaffForm({
 }) {
   const [state, formAction] = useActionState(action, {});
   const forzarRef = useRef<HTMLInputElement>(null);
+  const [personaId, setPersonaId] = useState("");
+  const [costo, setCosto] = useState("");
+  const referencia =
+    personal.find((persona) => persona.id === personaId)?.costo_referencia ?? null;
 
   if (personal.length === 0) {
     return (
@@ -47,7 +57,18 @@ export function AsignarStaffForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3">
-      <select name="personal_id" required defaultValue="" className={inputClasses}>
+      <select
+        name="personal_id"
+        required
+        value={personaId}
+        onChange={(e) => {
+          setPersonaId(e.target.value);
+          // Se propone la referencia de la persona; se puede cambiar.
+          const ref = personal.find((p) => p.id === e.target.value)?.costo_referencia;
+          setCosto(ref === null || ref === undefined ? "" : String(Number(ref)));
+        }}
+        className={inputClasses}
+      >
         <option value="" disabled>
           Seleccioná una persona
         </option>
@@ -68,9 +89,16 @@ export function AsignarStaffForm({
         type="number"
         min={0}
         step="1"
-        placeholder="Costo (Gs., opcional)"
+        placeholder="Costo acordado (Gs., opcional)"
+        value={costo}
+        onChange={(e) => setCosto(e.target.value)}
         className={inputClasses}
       />
+      {referencia !== null && (
+        <span className="-mt-1 text-xs text-zinc-400">
+          Referencia: {formatGuaranies(Number(referencia))}. Cambialo si se negoció otro monto.
+        </span>
+      )}
       <input type="hidden" name="forzar" ref={forzarRef} defaultValue="" />
 
       {state.error && (

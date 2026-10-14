@@ -6,6 +6,7 @@ export type TurnoParaLista = {
   id: string;
   rol_en_evento: string;
   costo: number | null;
+  costo_referencia: number | null;
   confirmado: boolean;
   personal: { nombre: string; rol: PersonalRol } | null;
 };
@@ -14,10 +15,12 @@ export function StaffAsignadoList({
   turnos,
   toggleConfirmadoAction,
   eliminarAction,
+  actualizarCostoAction,
 }: {
   turnos: TurnoParaLista[];
   toggleConfirmadoAction: (turnoId: string) => Promise<void>;
   eliminarAction: (turnoId: string) => Promise<void>;
+  actualizarCostoAction: (turnoId: string, formData: FormData) => Promise<void>;
 }) {
   if (turnos.length === 0) {
     return (
@@ -43,9 +46,33 @@ export function StaffAsignadoList({
                 </span>
               )}
             </span>
-            <span className="text-xs text-zinc-500">
-              {turno.rol_en_evento} · {formatGuaranies(turno.costo)}
-            </span>
+            <span className="text-xs text-zinc-500">{turno.rol_en_evento}</span>
+            <form
+              action={actualizarCostoAction.bind(null, turno.id)}
+              className="mt-1 flex items-center gap-1"
+            >
+              <input
+                name="costo"
+                type="number"
+                min={0}
+                step="1"
+                defaultValue={turno.costo === null ? "" : Number(turno.costo)}
+                placeholder="Costo"
+                aria-label="Costo acordado"
+                className="w-28 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-900 focus:border-fucsia-400 focus:outline-none"
+              />
+              <button type="submit" className="text-xs font-medium text-fucsia-600">
+                Guardar
+              </button>
+            </form>
+            {turno.costo_referencia !== null && (
+              <span className="text-xs text-zinc-400">
+                Ref. {formatGuaranies(Number(turno.costo_referencia))}
+                {turno.costo !== null &&
+                  Number(turno.costo) !== Number(turno.costo_referencia) &&
+                  ` · ${Number(turno.costo) < Number(turno.costo_referencia) ? "−" : "+"}${formatGuaranies(Math.abs(Number(turno.costo) - Number(turno.costo_referencia)))} vs referencia`}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <form action={toggleConfirmadoAction.bind(null, turno.id)}>

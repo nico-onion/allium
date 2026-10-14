@@ -27,6 +27,8 @@ export default async function EditarPersonalPage({
           nombre: persona.nombre,
           rol: persona.rol,
           telefono: persona.telefono,
+          costo_referencia:
+            persona.costo_referencia === null ? null : Number(persona.costo_referencia),
         }}
         action={actualizarEstaPersona}
         submitLabel="Guardar cambios"
